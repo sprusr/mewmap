@@ -1,7 +1,9 @@
-import type { Camera, MewMap, MewMapOptions, Source, Style } from "./types.js";
+import { camera } from "./camera.js";
+import { source } from "./source.js";
+import { style } from "./style.js";
+import type { MewMap, MewMapOptions } from "./types.js";
 
 type InternalMewMap = MewMap & {
-  _renderAbort: AbortController | null;
   _render(): Promise<void>;
 };
 
@@ -9,30 +11,15 @@ export const mewmap = (
   svg: SVGSVGElement,
   options: MewMapOptions = {},
 ): MewMap => {
-  const camera: Camera = {
-    longitude: options.center?.[0] ?? 0,
-    latitude: options.center?.[1] ?? 0,
-    zoom: options.zoom ?? 0,
-  };
-  const source: Source = {
-    async getTile() {
-      return {};
-    },
-  };
-  const style: Style = {
-    renderTile() {
-      return document.createElementNS("http://www.w3.org/2000/svg", "g");
-    },
-  };
   const map: InternalMewMap = {
-    camera,
-    source,
-    style,
+    camera: camera(options),
+    source: source(),
+    style: style(),
     svg,
-    _renderAbort: null,
     async _render() {
-      const tile = await source.getTile(0, 0, 0);
-      const element = style.renderTile(tile);
+      const tile = await this.source.getTile(582, 296, 10);
+      const element = this.style.renderTile(tile);
+      this.svg.setAttribute("viewBox", `0 0 4096 4096`);
       this.svg.appendChild(element);
     },
   };
