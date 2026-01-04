@@ -32,27 +32,45 @@ export const getVisibleTiles = (
   latitude: number,
   zoom: number,
 ): [number, number][] => {
-  const tileCoordinates = coordinatesToTile(longitude, latitude, zoom);
-  const visibleTiles: [number, number][] = [
-    [Math.floor(tileCoordinates[0]), Math.floor(tileCoordinates[1])],
+  const tileCoordinates = coordinatesToTile(
+    longitude,
+    latitude,
+    Math.round(zoom),
+  );
+  const [topLeftTileX, topLeftTileY] = [
+    tileCoordinates[0] - 0.5,
+    tileCoordinates[1] - 0.5,
   ];
-  if (!Number.isInteger(tileCoordinates[0] - 0.5)) {
-    visibleTiles.push([
-      Math.ceil(tileCoordinates[0]),
-      Math.floor(tileCoordinates[1]),
-    ]);
+  const visibleTiles: [number, number][] = [
+    [Math.floor(topLeftTileX), Math.floor(topLeftTileY)],
+  ];
+  if (!Number.isInteger(topLeftTileX)) {
+    visibleTiles.push([Math.ceil(topLeftTileX), Math.floor(topLeftTileY)]);
   }
-  if (!Number.isInteger(tileCoordinates[1] - 0.5)) {
-    visibleTiles.push([
-      Math.floor(tileCoordinates[0]),
-      Math.ceil(tileCoordinates[1]),
-    ]);
+  if (!Number.isInteger(topLeftTileY)) {
+    visibleTiles.push([Math.floor(topLeftTileX), Math.ceil(topLeftTileY)]);
   }
   if (visibleTiles.length === 3) {
-    visibleTiles.push([
-      Math.ceil(tileCoordinates[0]),
-      Math.ceil(tileCoordinates[1]),
-    ]);
+    visibleTiles.push([Math.ceil(topLeftTileX), Math.ceil(topLeftTileY)]);
   }
   return visibleTiles;
+};
+
+export const getOffsetForTile = (
+  x: number,
+  y: number,
+  zoom: number,
+  longitude: number,
+  latitude: number,
+): [number, number] => {
+  const tileCoordinates = coordinatesToTile(
+    longitude,
+    latitude,
+    Math.round(zoom),
+  );
+
+  const resX = (x + 0.5 - tileCoordinates[0]) * 4096;
+  const resY = (y + 0.5 - tileCoordinates[1]) * 4096;
+
+  return [resX, resY];
 };
