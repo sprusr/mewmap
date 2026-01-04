@@ -18,7 +18,7 @@ export type Source = {
 };
 
 export type Style = {
-  renderTile(tile: Tile): SVGElement;
+  renderTile(tile: Tile): SVGSymbolElement;
 };
 
 export type MewMapOptions = CameraOptions;
@@ -28,4 +28,9 @@ export type MewMap = {
   source: Source;
   style: Style;
   svg: SVGSVGElement;
+  move(position: {
+    longitude?: number;
+    latitude?: number;
+    zoom?: number;
+  }): void;
 };
