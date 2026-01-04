@@ -1,24 +1,7 @@
-import { decodeGeometry } from "./mvt.js";
-import type { Style } from "./types.js";
-
-const LAYERS = [
-  {
-    id: "background",
-    type: "background",
-    paint: {
-      "background-color": "rgb(249,244,238)",
-    },
-  },
-  {
-    source: "versatiles-shortbread",
-    id: "water-ocean",
-    type: "fill",
-    "source-layer": "ocean",
-    paint: {
-      "fill-color": "rgb(190,221,243)",
-    },
-  },
-] as const;
+import { decodeGeometry } from "../mvt.js";
+import type { Style } from "../types.js";
+import { LAYERS } from "./constants.js";
+import { evaluate } from "./expression/index.js";
 
 export const style = (): Style => {
   return {
@@ -41,7 +24,14 @@ export const style = (): Style => {
           );
           if (!tileLayer) continue;
 
-          for (const tileFeature of tileLayer.features) {
+          const tileFeatures =
+            "filter" in layer
+              ? tileLayer.features.filter((feature) =>
+                  evaluate(layer.filter, { layer: tileLayer, feature }),
+                )
+              : tileLayer.features;
+
+          for (const tileFeature of tileFeatures) {
             const geometry = decodeGeometry(tileFeature);
             if (geometry !== null) {
               const element = document.createElementNS(
