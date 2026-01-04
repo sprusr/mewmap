@@ -23,7 +23,7 @@
   ],
   "author": "Scott Street <scott@spru.sr>",
   "license": "ISC",
-  "packageManager": "pnpm@10.24.0",
+  "packageManager": "pnpm@10.27.0",
   "devDependencies": {
     "@biomejs/biome": "2.3.8",
     "husky": "^9.1.7",
