@@ -20,7 +20,7 @@
             import { mewmap } from "./src/index.ts";
 
             const svg = document.getElementById("mewmap");
-            const map = mewmap(svg);
+            const map = mewmap(svg, { center: [24.9384, 60.1699], zoom: 12 });
 
             document.getElementById("zoom-in").addEventListener("click", () => {
                 map.move({ zoom: map.camera.zoom + 1 });

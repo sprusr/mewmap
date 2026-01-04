@@ -1,6 +1,7 @@
 import { camera, getOffsetForTile, getVisibleTiles } from "./camera.js";
 import { source } from "./source.js";
-import { style } from "./style.js";
+import { style } from "./style/index.js";
+
 import type { MewMap, MewMapOptions } from "./types.js";
 
 type InternalMewMap = MewMap & {
