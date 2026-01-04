@@ -23,12 +23,7 @@ const LAYERS = [
 export const style = (): Style => {
   return {
     renderTile(tile) {
-      const symbol = document.createElementNS(
-        "http://www.w3.org/2000/svg",
-        "symbol",
-      );
-
-      symbol.setAttribute("viewBox", "0 0 4096 4096");
+      const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
 
       for (const layer of LAYERS) {
         if (layer.type === "background") {
@@ -36,10 +31,10 @@ export const style = (): Style => {
             "http://www.w3.org/2000/svg",
             "rect",
           );
-          element.setAttribute("width", "100%");
-          element.setAttribute("height", "100%");
+          element.setAttribute("width", "4096");
+          element.setAttribute("height", "4096");
           element.setAttribute("fill", layer.paint["background-color"]);
-          symbol.appendChild(element);
+          g.appendChild(element);
         } else if (layer.type === "fill") {
           const tileLayer = tile.layers.find(
             (tileLayer) => tileLayer.name === layer["source-layer"],
@@ -55,13 +50,13 @@ export const style = (): Style => {
               );
               element.setAttribute("fill", layer.paint["fill-color"]);
               element.setAttribute("d", geometry);
-              symbol.appendChild(element);
+              g.appendChild(element);
             }
           }
         }
       }
 
-      return symbol;
+      return g;
     },
   };
 };

@@ -36,21 +36,11 @@ export const mewmap = (
       );
       const z = Math.round(this.camera.zoom);
 
-      const symbols = [];
+      const gs = [];
       for (const [x, y] of visibleTiles) {
         const tile = await this.source.getTile(x, y, z);
-        const symbol = this.style.renderTile(tile);
-        symbol.setAttribute("id", `tile-${x}-${y}-${z}`);
-        symbols.push(symbol);
-      }
-
-      const uses = [];
-      for (const [x, y] of visibleTiles) {
-        const use = document.createElementNS(
-          "http://www.w3.org/2000/svg",
-          "use",
-        );
-        use.setAttribute("href", `#tile-${x}-${y}-${z}`);
+        const g = this.style.renderTile(tile);
+        g.setAttribute("id", `tile-${x}-${y}-${z}`);
         const offset = getOffsetForTile(
           x,
           y,
@@ -58,13 +48,12 @@ export const mewmap = (
           this.camera.longitude,
           this.camera.latitude,
         );
-        use.setAttribute("x", offset[0].toString());
-        use.setAttribute("y", offset[1].toString());
-        uses.push(use);
+        g.setAttribute("transform", `translate(${offset[0]}, ${offset[1]})`);
+        gs.push(g);
       }
 
       this.svg.setAttribute("viewBox", `0 0 4096 4096`);
-      this.svg.replaceChildren(...symbols, ...uses);
+      this.svg.replaceChildren(...gs);
     },
   };
   void map._render();

@@ -18,7 +18,7 @@ export type Source = {
 };
 
 export type Style = {
-  renderTile(tile: Tile): SVGSymbolElement;
+  renderTile(tile: Tile): SVGGElement;
 };
 
 export type MewMapOptions = CameraOptions;
