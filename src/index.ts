@@ -1,4 +1,4 @@
-import { camera, getVisibleTiles } from "./camera.js";
+import { camera, getOffsetForTile, getVisibleTiles } from "./camera.js";
 import { source } from "./source.js";
 import { style } from "./style.js";
 import type { MewMap, MewMapOptions } from "./types.js";
@@ -34,7 +34,7 @@ export const mewmap = (
         this.camera.latitude,
         this.camera.zoom,
       );
-      const z = this.camera.zoom;
+      const z = Math.round(this.camera.zoom);
 
       const symbols = [];
       for (const [x, y] of visibleTiles) {
@@ -44,13 +44,27 @@ export const mewmap = (
         symbols.push(symbol);
       }
 
-      const use = document.createElementNS("http://www.w3.org/2000/svg", "use");
-      if (symbols[0] !== undefined) {
-        use.setAttribute("href", `#${symbols[0].id}`);
+      const uses = [];
+      for (const [x, y] of visibleTiles) {
+        const use = document.createElementNS(
+          "http://www.w3.org/2000/svg",
+          "use",
+        );
+        use.setAttribute("href", `#tile-${x}-${y}-${z}`);
+        const offset = getOffsetForTile(
+          x,
+          y,
+          z,
+          this.camera.longitude,
+          this.camera.latitude,
+        );
+        use.setAttribute("x", offset[0].toString());
+        use.setAttribute("y", offset[1].toString());
+        uses.push(use);
       }
 
       this.svg.setAttribute("viewBox", `0 0 4096 4096`);
-      this.svg.replaceChildren(...symbols, use);
+      this.svg.replaceChildren(...symbols, ...uses);
     },
   };
   void map._render();

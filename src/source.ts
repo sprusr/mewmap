@@ -1,5 +1,5 @@
 import { fromBinary } from "@bufbuild/protobuf";
-import { TileSchema } from "./gen/vector_tile_pb.js";
+import { type Tile, TileSchema } from "./gen/vector_tile_pb.js";
 import type { Source } from "./types.js";
 
 const TILES_URL = "https://tiles.versatiles.org/tiles/osm/{z}/{x}/{y}";
@@ -25,10 +25,18 @@ export const parseTile = (bytes: Uint8Array) => {
 };
 
 export const source = (): Source => {
+  const tileCache = new Map<string, Tile>();
+
   return {
     async getTile(x, y, z) {
+      const cached = tileCache.get(`${x}-${y}-${z}`);
+      if (cached) return cached;
+
       const bytes = await fetchTile(TILES_URL, x, y, z);
       const tile = parseTile(bytes);
+
+      tileCache.set(`${x}-${y}-${z}`, tile);
+
       return tile;
     },
   };
