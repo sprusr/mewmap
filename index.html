@@ -3,13 +3,17 @@
     <head>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>Mewmap</title>
+        <title>mewmap</title>
     </head>
     <body>
+        <svg id="mewmap" width="1080" height="1080"></svg>
         <script type="module">
             import { mewmap } from "./src/index.ts";
 
-            mewmap();
+            const svg = document.getElementById("mewmap");
+            const map = mewmap(svg);
+
+            console.log(map);
         </script>
     </body>
 </html>
