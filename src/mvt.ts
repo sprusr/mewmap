@@ -65,6 +65,8 @@ export const decodeGeometry = (feature: Tile_Feature): string | null => {
     return null;
   }
 
+  let cursorX = 0;
+  let cursorY = 0;
   const svgCommands: string[] = [];
 
   for (
@@ -76,16 +78,21 @@ export const decodeGeometry = (feature: Tile_Feature): string | null => {
       case "moveTo":
         for (const [x, y] of command.params) {
           svgCommands.push(`m ${x},${y}`);
+          cursorX += x;
+          cursorY += y;
         }
         break;
       case "lineTo":
         svgCommands.push("l");
         for (const [x, y] of command.params) {
           svgCommands.push(`${x},${y}`);
+          cursorX += x;
+          cursorY += y;
         }
         break;
       case "closePath":
         svgCommands.push("z");
+        svgCommands.push(`M ${cursorX},${cursorY}`);
         break;
     }
   }
