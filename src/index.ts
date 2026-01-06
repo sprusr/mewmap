@@ -1,7 +1,6 @@
 import {
   calculateViewBox,
   camera,
-  coordinatesToTile,
   getOffsetForTile,
   getVisibleTiles,
   screenToTile,
@@ -22,16 +21,8 @@ export const mewmap = (
 ): MewMap => {
   const map: InternalMewMap = {
     camera: camera(options),
-    move({ longitude, latitude, zoom }) {
-      if (longitude !== undefined) {
-        this.camera.longitude = longitude;
-      }
-      if (latitude !== undefined) {
-        this.camera.latitude = latitude;
-      }
-      if (zoom !== undefined) {
-        this.camera.zoom = zoom;
-      }
+    move(params) {
+      this.camera.move(params);
       void this._render();
     },
     source: source(),
@@ -98,11 +89,6 @@ const addEventListeners = (map: InternalMewMap) => {
   });
   document.addEventListener("pointermove", (event) => {
     if (!pointerdown) return;
-    const [currentCenterX, currentCenterY] = coordinatesToTile(
-      map.camera.longitude,
-      map.camera.latitude,
-      map.camera.zoom,
-    );
     const [previousX, previousY] = screenToTile(
       {
         x: event.offsetX - event.movementX,
@@ -126,8 +112,8 @@ const addEventListeners = (map: InternalMewMap) => {
       map.camera.zoom,
     );
     const [longitude, latitude] = tileToCoordinates(
-      currentCenterX + previousX - x,
-      currentCenterY + previousY - y,
+      map.camera.x + previousX - x,
+      map.camera.y + previousY - y,
       map.camera.zoom,
     );
     map.move({ longitude, latitude });

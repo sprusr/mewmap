@@ -1,10 +1,39 @@
 import type { Camera, CameraOptions } from "./types.js";
 
 export const camera = (options: CameraOptions = {}): Camera => {
+  let longitude = options.center?.[0] ?? 0;
+  let latitude = options.center?.[1] ?? 0;
+  let zoom = options.zoom ?? 0;
+  let [x, y] = coordinatesToTile(longitude, latitude, zoom);
+
+  const move = (position: {
+    longitude?: number;
+    latitude?: number;
+    zoom?: number;
+  }): void => {
+    longitude = position.longitude ?? longitude;
+    latitude = position.latitude ?? latitude;
+    zoom = position.zoom ?? zoom;
+    [x, y] = coordinatesToTile(longitude, latitude, zoom);
+  };
+
   return {
-    longitude: options.center?.[0] ?? 0,
-    latitude: options.center?.[1] ?? 0,
-    zoom: options.zoom ?? 0,
+    get longitude() {
+      return longitude;
+    },
+    get latitude() {
+      return latitude;
+    },
+    get zoom() {
+      return zoom;
+    },
+    get x() {
+      return x;
+    },
+    get y() {
+      return y;
+    },
+    move,
     screenToCoordinates() {
       return [0, 0];
     },
