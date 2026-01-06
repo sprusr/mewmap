@@ -1,4 +1,12 @@
-import { camera, getOffsetForTile, getVisibleTiles } from "./camera.js";
+import {
+  calculateViewBox,
+  camera,
+  coordinatesToTile,
+  getOffsetForTile,
+  getVisibleTiles,
+  screenToTile,
+  tileToCoordinates,
+} from "./camera.js";
 import { source } from "./source.js";
 import { style } from "./style/index.js";
 
@@ -53,10 +61,75 @@ export const mewmap = (
         gs.push(g);
       }
 
-      this.svg.setAttribute("viewBox", `0 0 4096 4096`);
       this.svg.replaceChildren(...gs);
+
+      this.svg.setAttribute(
+        "viewBox",
+        calculateViewBox(this.svg.clientWidth, this.svg.clientHeight),
+      );
     },
   };
+
+  addEventListeners(map);
+
   void map._render();
+
   return map;
+};
+
+const addEventListeners = (map: InternalMewMap) => {
+  new ResizeObserver(([entry]) => {
+    if (!entry?.borderBoxSize[0]) return;
+    map.svg.setAttribute(
+      "viewBox",
+      calculateViewBox(
+        entry.borderBoxSize[0].inlineSize,
+        entry.borderBoxSize[0].blockSize,
+      ),
+    );
+  }).observe(map.svg);
+
+  let pointerdown = false;
+  map.svg.addEventListener("pointerdown", () => {
+    pointerdown = true;
+  });
+  document.addEventListener("pointerup", () => {
+    pointerdown = false;
+  });
+  document.addEventListener("pointermove", (event) => {
+    if (!pointerdown) return;
+    const [currentCenterX, currentCenterY] = coordinatesToTile(
+      map.camera.longitude,
+      map.camera.latitude,
+      map.camera.zoom,
+    );
+    const [previousX, previousY] = screenToTile(
+      {
+        x: event.offsetX - event.movementX,
+        y: event.offsetY - event.movementY,
+        width: map.svg.clientWidth,
+        height: map.svg.clientHeight,
+      },
+      map.svg.viewBox.baseVal,
+      map.camera,
+      map.camera.zoom,
+    );
+    const [x, y] = screenToTile(
+      {
+        x: event.offsetX,
+        y: event.offsetY,
+        width: map.svg.clientWidth,
+        height: map.svg.clientHeight,
+      },
+      map.svg.viewBox.baseVal,
+      map.camera,
+      map.camera.zoom,
+    );
+    const [longitude, latitude] = tileToCoordinates(
+      currentCenterX + previousX - x,
+      currentCenterY + previousY - y,
+      map.camera.zoom,
+    );
+    map.move({ longitude, latitude });
+  });
 };

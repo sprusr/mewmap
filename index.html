@@ -4,10 +4,28 @@
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>mewmap</title>
+        <style>
+            body {
+                margin: 0;
+                display: grid;
+                grid-template-columns: 100vw;
+                grid-template-rows: 100vh;
+            }
+            .map {
+                grid-area: 1 / 1 / 1 / 1;
+                width: 100%;
+                height: 100%;
+            }
+            .controls {
+                grid-area: 1 / 1 / 1 / 1;
+                margin-block-start: auto;
+                padding: 8px;
+            }
+        </style>
     </head>
     <body>
-        <svg id="mewmap" width="480" height="480"></svg>
-        <div>
+        <svg class="map" id="mewmap"></svg>
+        <div class="controls">
             <button type="button" id="zoom-in">Zoom in</button>
             <button type="button" id="zoom-out">Zoom out</button>
             <button type="button" id="left">Left</button>

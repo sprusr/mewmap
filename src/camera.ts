@@ -14,6 +14,46 @@ export const camera = (options: CameraOptions = {}): Camera => {
   };
 };
 
+export const calculateViewBox = (clientWidth: number, clientHeight: number) => {
+  const width =
+    clientWidth > clientHeight ? 4096 : (clientWidth / clientHeight) * 4096;
+  const height =
+    clientHeight > clientWidth ? 4096 : (clientHeight / clientWidth) * 4096;
+  const x = width < 4096 ? (4096 - width) / 2 : 0;
+  const y = height < 4096 ? (4096 - height) / 2 : 0;
+  return `${x} ${y} ${width} ${height}`;
+};
+
+export const screenToTile = (
+  screen: { x: number; y: number; width: number; height: number },
+  viewBox: { x: number; y: number; width: number; height: number },
+  center: { longitude: number; latitude: number },
+  zoom: number,
+): [number, number] => {
+  const svgX = (screen.x / screen.width) * viewBox.width + viewBox.x;
+  const svgY = (screen.y / screen.height) * viewBox.height + viewBox.y;
+  const [centerTileX, centerTileY] = coordinatesToTile(
+    center.longitude,
+    center.latitude,
+    zoom,
+  );
+  const x = svgX / 4096 + centerTileX - 0.5;
+  const y = svgY / 4096 + centerTileY - 0.5;
+  return [x, y];
+};
+
+export const tileToCoordinates = (
+  tileX: number,
+  tileY: number,
+  zoom: number,
+): [number, number] => {
+  const n = 2 ** zoom; // number of tiles in each direction
+  const x = (tileX / n) * 360 - 180;
+  const y =
+    Math.atan(Math.sinh(Math.PI * (1 - (2 * tileY) / n))) * (180 / Math.PI);
+  return [x, y];
+};
+
 export const coordinatesToTile = (
   longitude: number,
   latitude: number,
