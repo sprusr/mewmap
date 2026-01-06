@@ -9,6 +9,13 @@ export type Camera = {
   longitude: number;
   latitude: number;
   zoom: number;
+  x: number;
+  y: number;
+  move(position: {
+    longitude?: number;
+    latitude?: number;
+    zoom?: number;
+  }): void;
   screenToCoordinates(x: number, y: number): [number, number];
   coordinatesToScreen(longitude: number, latitude: number): [number, number];
 };
