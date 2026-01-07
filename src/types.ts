@@ -1,16 +1,17 @@
 import type { Tile } from "./gen/vector_tile_pb.js";
 
 export type CameraOptions = {
-  center?: [number, number];
+  longitude?: number;
+  latitude?: number;
   zoom?: number;
 };
 
 export type Camera = {
-  longitude: number;
-  latitude: number;
-  zoom: number;
-  x: number;
-  y: number;
+  readonly longitude: number;
+  readonly latitude: number;
+  readonly zoom: number;
+  readonly x: number;
+  readonly y: number;
   move(position: {
     longitude?: number;
     latitude?: number;
@@ -28,13 +29,13 @@ export type Style = {
   renderTile(tile: Tile): SVGGElement;
 };
 
-export type MewMapOptions = CameraOptions;
+export type MewMapOptions = CameraOptions & { svg: Element | null };
 
 export type MewMap = {
-  camera: Camera;
-  source: Source;
-  style: Style;
-  svg: SVGSVGElement;
+  readonly camera: Camera;
+  readonly source: Source;
+  readonly style: Style;
+  readonly svg: SVGSVGElement;
   move(position: {
     longitude?: number;
     latitude?: number;
