@@ -1,10 +1,10 @@
-import { TILE_EXTENT } from "./constants.js";
+import { MAX_ZOOM, MIN_ZOOM, TILE_EXTENT } from "./constants.js";
 import type { Camera, CameraOptions } from "./types.js";
 
 export const camera = (options: CameraOptions): Camera => {
   let longitude = options.longitude ?? 0;
   let latitude = options.latitude ?? 0;
-  let zoom = options.zoom ?? 0;
+  let zoom = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, options.zoom ?? 0));
   let { x, y } = coordinatesToTile({ longitude, latitude, zoom });
   let screen = options.screen;
   let viewBox = calculateViewBox(screen);
@@ -38,7 +38,7 @@ export const camera = (options: CameraOptions): Camera => {
     move(position) {
       longitude = position.longitude ?? longitude;
       latitude = position.latitude ?? latitude;
-      zoom = position.zoom ?? zoom;
+      zoom = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, position.zoom ?? zoom));
       ({ x, y } = coordinatesToTile({ longitude, latitude, zoom }));
     },
     screenToTile(position) {
