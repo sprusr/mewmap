@@ -1,9 +1,10 @@
 {
   "name": "mewmap",
-  "version": "0.1.0-alpha.1",
+  "version": "0.1.0-alpha.2",
   "description": "SVG vector map renderer",
   "type": "module",
-  "exports": "./dist/index.js",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "scripts": {
     "dev": "vite",
     "build": "tsc",
