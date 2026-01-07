@@ -1,13 +1,14 @@
 # mewmap
 
-Draw maps as SVGs.
+Interactive maps powered by SVG. For when WebGL/WebGPU is a bit too fancy.
 
 ```ts
 import { mewmap } from 'mewmap';
 
-const container = document.getElementById('mewmap');
-const map = mewmap(container, {
-  center: [0, 0],
-  zoom: 2,
+const map = mewmap({
+    svg: document.getElementById("mewmap"),
+    longitude: 24.9384,
+    latitude: 60.1699,
+    zoom: 12,
 });
 ```

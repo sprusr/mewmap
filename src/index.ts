@@ -15,10 +15,11 @@ type InternalMewMap = MewMap & {
   _render(): Promise<void>;
 };
 
-export const mewmap = (
-  svg: SVGSVGElement,
-  options: MewMapOptions = {},
-): MewMap => {
+export const mewmap = (options: MewMapOptions): MewMap => {
+  if (options.svg === null || options.svg.tagName !== "svg") {
+    throw new Error("svg option must be an svg element");
+  }
+
   const map: InternalMewMap = {
     camera: camera(options),
     move(params) {
@@ -27,7 +28,7 @@ export const mewmap = (
     },
     source: source(),
     style: style(),
-    svg,
+    svg: options.svg as SVGSVGElement,
     async _render() {
       const visibleTiles = getVisibleTiles(
         this.camera.longitude,

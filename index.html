@@ -29,17 +29,19 @@
         <div class="controls">
             <button type="button" id="zoom-in">Zoom in</button>
             <button type="button" id="zoom-out">Zoom out</button>
-            <button type="button" id="left">Left</button>
-            <button type="button" id="right">Right</button>
-            <button type="button" id="up">Up</button>
-            <button type="button" id="down">Down</button>
             <button type="button" id="helsinki">Helsinki</button>
         </div>
         <script type="module">
             import { mewmap } from "./src/index.ts";
 
-            const svg = document.getElementById("mewmap");
-            const map = mewmap(svg, { center: [24.9384, 60.1699], zoom: 12 });
+            const map = mewmap({
+                svg: document.getElementById("mewmap"),
+                longitude: 24.9384,
+                latitude: 60.1699,
+                zoom: 12,
+            });
+
+            window.map = map;
 
             document.getElementById("zoom-in").addEventListener("click", () => {
                 map.move({ zoom: map.camera.zoom + 1 });
@@ -49,18 +51,6 @@
                 .addEventListener("click", () => {
                     map.move({ zoom: map.camera.zoom - 1 });
                 });
-            document.getElementById("left").addEventListener("click", () => {
-                map.move({ longitude: map.camera.longitude - 1 });
-            });
-            document.getElementById("right").addEventListener("click", () => {
-                map.move({ longitude: map.camera.longitude + 1 });
-            });
-            document.getElementById("up").addEventListener("click", () => {
-                map.move({ latitude: map.camera.latitude + 1 });
-            });
-            document.getElementById("down").addEventListener("click", () => {
-                map.move({ latitude: map.camera.latitude - 1 });
-            });
             document
                 .getElementById("helsinki")
                 .addEventListener("click", () => {

@@ -1,8 +1,8 @@
 import type { Camera, CameraOptions } from "./types.js";
 
 export const camera = (options: CameraOptions = {}): Camera => {
-  let longitude = options.center?.[0] ?? 0;
-  let latitude = options.center?.[1] ?? 0;
+  let longitude = options.longitude ?? 0;
+  let latitude = options.latitude ?? 0;
   let zoom = options.zoom ?? 0;
   let [x, y] = coordinatesToTile(longitude, latitude, zoom);
 
@@ -83,7 +83,7 @@ export const tileToCoordinates = (
   return [x, y];
 };
 
-export const coordinatesToTile = (
+const coordinatesToTile = (
   longitude: number,
   latitude: number,
   zoom: number,
