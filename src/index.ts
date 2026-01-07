@@ -1,19 +1,16 @@
-import { camera, getOffsetForTile, getVisibleTiles } from "./camera.js";
+import { camera } from "./camera.js";
+import { renderer } from "./renderer.js";
 import { source } from "./source.js";
 import { style } from "./style/index.js";
 import type { MewMap, MewMapOptions } from "./types.js";
 import { viewBoxForSvg } from "./utils.js";
-
-type InternalMewMap = MewMap & {
-  _render(): Promise<void>;
-};
 
 export const mewmap = (options: MewMapOptions): MewMap => {
   if (options.svg === null || options.svg.tagName !== "svg") {
     throw new Error("svg option must be an svg element");
   }
 
-  const map: InternalMewMap = {
+  const map: MewMap = {
     camera: camera({
       ...options,
       screen: {
@@ -23,49 +20,22 @@ export const mewmap = (options: MewMapOptions): MewMap => {
     }),
     move(params) {
       this.camera.move(params);
-      void this._render();
+      void this.renderer.render(this);
     },
     source: source(),
     style: style(),
     svg: options.svg as SVGSVGElement,
-    async _render() {
-      const visibleTiles = getVisibleTiles(
-        this.camera.longitude,
-        this.camera.latitude,
-        this.camera.zoom,
-      );
-      const z = Math.round(this.camera.zoom);
-
-      const gs = [];
-      for (const [x, y] of visibleTiles) {
-        const tile = await this.source.getTile(x, y, z);
-        const g = this.style.renderTile(tile);
-        g.setAttribute("id", `tile-${x}-${y}-${z}`);
-        const offset = getOffsetForTile(
-          x,
-          y,
-          z,
-          this.camera.longitude,
-          this.camera.latitude,
-        );
-        g.setAttribute("transform", `translate(${offset[0]}, ${offset[1]})`);
-        gs.push(g);
-      }
-
-      this.svg.replaceChildren(...gs);
-
-      this.svg.setAttribute("viewBox", viewBoxForSvg(this.camera.viewBox));
-    },
+    renderer: renderer(),
   };
 
   addEventListeners(map);
 
-  void map._render();
+  void map.renderer.render(map);
 
   return map;
 };
 
-const addEventListeners = (map: InternalMewMap) => {
+const addEventListeners = (map: MewMap) => {
   new ResizeObserver(([entry]) => {
     if (!entry?.borderBoxSize[0]) return;
     map.camera.resize({
