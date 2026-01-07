@@ -3,13 +3,43 @@ import type { Renderer } from "./types.js";
 import { viewBoxForSvg } from "./utils.js";
 
 export const renderer = (): Renderer => {
+  let renderedTiles: { x: number; y: number; z: number }[] = [];
+
+  const updateRenderedTiles = (
+    tiles: { x: number; y: number; z: number }[],
+  ): {
+    added: { x: number; y: number; z: number }[];
+    removed: { x: number; y: number; z: number }[];
+  } => {
+    const added = tiles.filter(
+      (tile) =>
+        !renderedTiles.find(
+          (renderedTile) =>
+            tile.x === renderedTile.x &&
+            tile.y === renderedTile.y &&
+            tile.z === renderedTile.z,
+        ),
+    );
+    const removed = renderedTiles.filter(
+      (renderedTile) =>
+        !tiles.find(
+          (tile) =>
+            tile.x === renderedTile.x &&
+            tile.y === renderedTile.y &&
+            tile.z === renderedTile.z,
+        ),
+    );
+    renderedTiles = tiles;
+    return { added, removed };
+  };
+
   return {
     async render({ camera, source, style, svg }) {
       const visibleTiles = getVisibleTiles(camera);
-      const z = Math.round(camera.zoom);
+      const { added, removed } = updateRenderedTiles(visibleTiles);
 
       const gs = [];
-      for (const [x, y] of visibleTiles) {
+      for (const { x, y, z } of added) {
         const tile = await source.getTile(x, y, z);
         const g = style.renderTile(tile);
         g.setAttribute("id", `tile-${x}-${y}-${z}`);
@@ -18,7 +48,18 @@ export const renderer = (): Renderer => {
         gs.push(g);
       }
 
-      svg.replaceChildren(...gs);
+      for (const { x, y, z } of removed) {
+        svg.getElementById(`tile-${x}-${y}-${z}`)?.remove();
+      }
+
+      for (const { x, y, z } of visibleTiles) {
+        const offset = getOffsetForTile({ camera, tile: { x, y } });
+        svg
+          .getElementById(`tile-${x}-${y}-${z}`)
+          ?.setAttribute("transform", `translate(${offset.x}, ${offset.y})`);
+      }
+
+      svg.append(...gs);
       svg.setAttribute("viewBox", viewBoxForSvg(camera.viewBox));
     },
   };
@@ -27,19 +68,16 @@ export const renderer = (): Renderer => {
 const getVisibleTiles = (camera: {
   x: number;
   y: number;
-}): [number, number][] => {
-  const [topLeftTileX, topLeftTileY] = [camera.x - 0.5, camera.y - 0.5];
-  const visibleTiles: [number, number][] = [
-    [Math.floor(topLeftTileX), Math.floor(topLeftTileY)],
-  ];
-  if (!Number.isInteger(topLeftTileX)) {
-    visibleTiles.push([Math.ceil(topLeftTileX), Math.floor(topLeftTileY)]);
-  }
-  if (!Number.isInteger(topLeftTileY)) {
-    visibleTiles.push([Math.floor(topLeftTileX), Math.ceil(topLeftTileY)]);
-  }
-  if (visibleTiles.length === 3) {
-    visibleTiles.push([Math.ceil(topLeftTileX), Math.ceil(topLeftTileY)]);
+  zoom: number;
+}): { x: number; y: number; z: number }[] => {
+  const x = Math.floor(camera.x),
+    y = Math.floor(camera.y),
+    z = camera.zoom;
+  const visibleTiles = [];
+  for (let i = Math.max(x - 1, 0); i < Math.min(x + 2, 2 ** z); i++) {
+    for (let j = Math.max(y - 1, 0); j < Math.min(y + 2, 2 ** z); j++) {
+      visibleTiles.push({ x: i, y: j, z });
+    }
   }
   return visibleTiles;
 };
