@@ -59,6 +59,15 @@ export type Style = {
   renderTile(tile: Tile): SVGGElement;
 };
 
+export type Renderer = {
+  render(params: {
+    camera: Camera;
+    source: Source;
+    style: Style;
+    svg: SVGSVGElement;
+  }): Promise<void>;
+};
+
 export type MewMapOptions = {
   longitude?: number;
   latitude?: number;
@@ -71,6 +80,7 @@ export type MewMap = {
   readonly source: Source;
   readonly style: Style;
   readonly svg: SVGSVGElement;
+  readonly renderer: Renderer;
   move(position: {
     longitude?: number;
     latitude?: number;
