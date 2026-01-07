@@ -17,7 +17,9 @@ export const style = (): Style => {
           );
           element.setAttribute("width", TILE_EXTENT.toString());
           element.setAttribute("height", TILE_EXTENT.toString());
-          element.setAttribute("fill", layer.paint["background-color"]);
+          if (layer.paint["background-color"] !== undefined) {
+            element.setAttribute("fill", layer.paint["background-color"]);
+          }
           g.appendChild(element);
         } else if (layer.type === "fill") {
           const tileLayer = tile.layers.find(
@@ -34,7 +36,8 @@ export const style = (): Style => {
           const tileFeatures =
             "filter" in layer
               ? tileLayer.features.filter((feature) =>
-                  evaluate(layer.filter, { layer: tileLayer, feature }),
+                  // biome-ignore lint/suspicious/noExplicitAny: until types are completed
+                  evaluate(layer.filter as any, { layer: tileLayer, feature }),
                 )
               : tileLayer.features;
 
@@ -45,11 +48,15 @@ export const style = (): Style => {
                 "http://www.w3.org/2000/svg",
                 "path",
               );
-              element.setAttribute("fill", layer.paint["fill-color"]);
+              if (layer.paint["fill-color"] !== undefined) {
+                element.setAttribute("fill", layer.paint["fill-color"]);
+              }
               element.setAttribute("d", geometry);
               g.appendChild(element);
             }
           }
+        } else if (layer.type === "line") {
+          //
         }
       }
 
