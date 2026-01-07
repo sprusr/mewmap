@@ -1,21 +1,13 @@
+import { TILE_EXTENT } from "./constants.js";
 import type { Camera, CameraOptions } from "./types.js";
 
-export const camera = (options: CameraOptions = {}): Camera => {
+export const camera = (options: CameraOptions): Camera => {
   let longitude = options.longitude ?? 0;
   let latitude = options.latitude ?? 0;
   let zoom = options.zoom ?? 0;
   let [x, y] = coordinatesToTile(longitude, latitude, zoom);
-
-  const move = (position: {
-    longitude?: number;
-    latitude?: number;
-    zoom?: number;
-  }): void => {
-    longitude = position.longitude ?? longitude;
-    latitude = position.latitude ?? latitude;
-    zoom = position.zoom ?? zoom;
-    [x, y] = coordinatesToTile(longitude, latitude, zoom);
-  };
+  let screen = options.screen;
+  let viewBox = calculateViewBox(screen);
 
   return {
     get longitude() {
@@ -33,54 +25,63 @@ export const camera = (options: CameraOptions = {}): Camera => {
     get y() {
       return y;
     },
-    move,
-    screenToCoordinates() {
-      return [0, 0];
+    get screen() {
+      return screen;
     },
-    coordinatesToScreen() {
-      return [0, 0];
+    get viewBox() {
+      return viewBox;
+    },
+    resize({ width, height }) {
+      screen = { width, height };
+      viewBox = calculateViewBox(screen);
+    },
+    move(position) {
+      longitude = position.longitude ?? longitude;
+      latitude = position.latitude ?? latitude;
+      zoom = position.zoom ?? zoom;
+      [x, y] = coordinatesToTile(longitude, latitude, zoom);
+    },
+    screenToTile(position) {
+      const svgX = (position.x / screen.width) * viewBox.width + viewBox.x;
+      const svgY = (position.y / screen.height) * viewBox.height + viewBox.y;
+      return {
+        x: svgX / TILE_EXTENT + x - 0.5,
+        y: svgY / TILE_EXTENT + y - 0.5,
+      };
+    },
+    tileToCoordinates(tile) {
+      const n = 2 ** zoom; // number of tiles in each direction
+      const longitude = (tile.x / n) * 360 - 180;
+      const latitude =
+        Math.atan(Math.sinh(Math.PI * (1 - (2 * tile.y) / n))) *
+        (180 / Math.PI);
+      return { longitude, latitude };
+    },
+    coordinatesToTile(coordinates) {
+      const n = 2 ** zoom; // number of tiles in each direction
+      const x = ((coordinates.longitude + 180) / 360) * n;
+      const latRad = (coordinates.latitude * Math.PI) / 180;
+      const y =
+        ((1 - Math.log(Math.tan(latRad) + 1 / Math.cos(latRad)) / Math.PI) /
+          2) *
+        n;
+      return { x, y };
     },
   };
 };
 
-export const calculateViewBox = (clientWidth: number, clientHeight: number) => {
+const calculateViewBox = (screen: { width: number; height: number }) => {
   const width =
-    clientWidth > clientHeight ? 4096 : (clientWidth / clientHeight) * 4096;
+    screen.width > screen.height
+      ? TILE_EXTENT
+      : (screen.width / screen.height) * TILE_EXTENT;
   const height =
-    clientHeight > clientWidth ? 4096 : (clientHeight / clientWidth) * 4096;
-  const x = width < 4096 ? (4096 - width) / 2 : 0;
-  const y = height < 4096 ? (4096 - height) / 2 : 0;
-  return `${x} ${y} ${width} ${height}`;
-};
-
-export const screenToTile = (
-  screen: { x: number; y: number; width: number; height: number },
-  viewBox: { x: number; y: number; width: number; height: number },
-  center: { longitude: number; latitude: number },
-  zoom: number,
-): [number, number] => {
-  const svgX = (screen.x / screen.width) * viewBox.width + viewBox.x;
-  const svgY = (screen.y / screen.height) * viewBox.height + viewBox.y;
-  const [centerTileX, centerTileY] = coordinatesToTile(
-    center.longitude,
-    center.latitude,
-    zoom,
-  );
-  const x = svgX / 4096 + centerTileX - 0.5;
-  const y = svgY / 4096 + centerTileY - 0.5;
-  return [x, y];
-};
-
-export const tileToCoordinates = (
-  tileX: number,
-  tileY: number,
-  zoom: number,
-): [number, number] => {
-  const n = 2 ** zoom; // number of tiles in each direction
-  const x = (tileX / n) * 360 - 180;
-  const y =
-    Math.atan(Math.sinh(Math.PI * (1 - (2 * tileY) / n))) * (180 / Math.PI);
-  return [x, y];
+    screen.height > screen.width
+      ? TILE_EXTENT
+      : (screen.height / screen.width) * TILE_EXTENT;
+  const x = width < TILE_EXTENT ? (TILE_EXTENT - width) / 2 : 0;
+  const y = height < TILE_EXTENT ? (TILE_EXTENT - height) / 2 : 0;
+  return { x, y, width, height };
 };
 
 const coordinatesToTile = (
@@ -138,8 +139,8 @@ export const getOffsetForTile = (
     Math.round(zoom),
   );
 
-  const resX = (x + 0.5 - tileCoordinates[0]) * 4096;
-  const resY = (y + 0.5 - tileCoordinates[1]) * 4096;
+  const resX = (x + 0.5 - tileCoordinates[0]) * TILE_EXTENT;
+  const resY = (y + 0.5 - tileCoordinates[1]) * TILE_EXTENT;
 
   return [resX, resY];
 };
