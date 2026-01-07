@@ -1,3 +1,4 @@
+import { TILE_EXTENT } from "../constants.js";
 import { decodeGeometry } from "../mvt.js";
 import type { Style } from "../types.js";
 import { LAYERS } from "./constants.js";
@@ -14,8 +15,8 @@ export const style = (): Style => {
             "http://www.w3.org/2000/svg",
             "rect",
           );
-          element.setAttribute("width", "4096");
-          element.setAttribute("height", "4096");
+          element.setAttribute("width", TILE_EXTENT.toString());
+          element.setAttribute("height", TILE_EXTENT.toString());
           element.setAttribute("fill", layer.paint["background-color"]);
           g.appendChild(element);
         } else if (layer.type === "fill") {
@@ -23,6 +24,12 @@ export const style = (): Style => {
             (tileLayer) => tileLayer.name === layer["source-layer"],
           );
           if (!tileLayer) continue;
+
+          if (tileLayer.extent !== TILE_EXTENT) {
+            throw new Error(
+              `Tile extent other than ${TILE_EXTENT} is not yet supported`,
+            );
+          }
 
           const tileFeatures =
             "filter" in layer
