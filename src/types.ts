@@ -16,9 +16,17 @@ export type Camera = {
   readonly x: number;
   /** The y-coordinate of the camera's position in tile coordinates. */
   readonly y: number;
+  /**
+   * The tile z-coordinate which is currently visible - `zoom` rounded to
+   * integer by some logic.
+   */
+  readonly z: number;
   /** Dimensions of the containing element on the page, a.k.a. the "screen". */
   readonly screen: { width: number; height: number };
-  /** The bounding box of the camera's view in ~tile coordinates~ SVG coordinates. */
+  /**
+   * The bounding box of the camera's view in ~tile coordinates~ SVG
+   * coordinates.
+   */
   readonly viewBox: { x: number; y: number; width: number; height: number };
   /** To be called when the containing element changes size. */
   resize(screen: { width: number; height: number }): void;
