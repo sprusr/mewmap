@@ -1,11 +1,12 @@
-import { MAX_ZOOM, MIN_ZOOM, TILE_EXTENT } from "./constants.js";
+import { MAX_TILE_Z, MAX_ZOOM, MIN_TILE_Z, TILE_EXTENT } from "./constants.js";
 import type { Camera, CameraOptions } from "./types.js";
 
 export const camera = (options: CameraOptions): Camera => {
   let longitude = options.longitude ?? 0;
   let latitude = options.latitude ?? 0;
-  let zoom = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, options.zoom ?? 0));
-  let { x, y } = coordinatesToTile({ longitude, latitude, zoom });
+  let zoom = Math.min(MAX_ZOOM, options.zoom ?? 0);
+  let z = Math.round(Math.min(MAX_TILE_Z, Math.max(MIN_TILE_Z, zoom)));
+  let { x, y } = coordinatesToTile({ longitude, latitude, z });
   let screen = options.screen;
   let viewBox = calculateViewBox(screen);
 
@@ -25,6 +26,9 @@ export const camera = (options: CameraOptions): Camera => {
     get y() {
       return y;
     },
+    get z() {
+      return z;
+    },
     get screen() {
       return screen;
     },
@@ -38,19 +42,21 @@ export const camera = (options: CameraOptions): Camera => {
     move(position) {
       longitude = position.longitude ?? longitude;
       latitude = position.latitude ?? latitude;
-      zoom = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, position.zoom ?? zoom));
-      ({ x, y } = coordinatesToTile({ longitude, latitude, zoom }));
+      zoom = Math.min(MAX_ZOOM, position.zoom ?? zoom);
+      z = Math.round(Math.min(MAX_TILE_Z, Math.max(MIN_TILE_Z, zoom)));
+      ({ x, y } = coordinatesToTile({ longitude, latitude, z }));
     },
     screenToTile(position) {
       const svgX = (position.x / screen.width) * viewBox.width + viewBox.x;
       const svgY = (position.y / screen.height) * viewBox.height + viewBox.y;
+      const scale = 2 ** (zoom - z);
       return {
-        x: svgX / TILE_EXTENT + x - 0.5,
-        y: svgY / TILE_EXTENT + y - 0.5,
+        x: svgX / TILE_EXTENT / scale + x - 0.5 * scale,
+        y: svgY / TILE_EXTENT / scale + y - 0.5 * scale,
       };
     },
     tileToCoordinates(tile) {
-      const n = 2 ** zoom; // number of tiles in each direction
+      const n = 2 ** z; // number of tiles in each direction
       const longitude = (tile.x / n) * 360 - 180;
       const latitude =
         Math.atan(Math.sinh(Math.PI * (1 - (2 * tile.y) / n))) *
@@ -58,7 +64,7 @@ export const camera = (options: CameraOptions): Camera => {
       return { longitude, latitude };
     },
     coordinatesToTile(coordinates) {
-      return coordinatesToTile({ ...coordinates, zoom });
+      return coordinatesToTile({ ...coordinates, z });
     },
   };
 };
@@ -80,13 +86,13 @@ const calculateViewBox = (screen: { width: number; height: number }) => {
 const coordinatesToTile = ({
   longitude,
   latitude,
-  zoom,
+  z,
 }: {
   longitude: number;
   latitude: number;
-  zoom: number;
+  z: number;
 }): { x: number; y: number } => {
-  const n = 2 ** zoom; // number of tiles in each direction
+  const n = 2 ** z; // number of tiles in each direction
   const x = ((longitude + 180) / 360) * n;
   const latRad = (latitude * Math.PI) / 180;
   const y =

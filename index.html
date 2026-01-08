@@ -44,12 +44,12 @@
             window.map = map;
 
             document.getElementById("zoom-in").addEventListener("click", () => {
-                map.move({ zoom: map.camera.zoom + 1 });
+                map.move({ zoom: map.camera.zoom + 0.5 });
             });
             document
                 .getElementById("zoom-out")
                 .addEventListener("click", () => {
-                    map.move({ zoom: map.camera.zoom - 1 });
+                    map.move({ zoom: map.camera.zoom - 0.5 });
                 });
             document
                 .getElementById("helsinki")

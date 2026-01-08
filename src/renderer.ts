@@ -43,8 +43,11 @@ export const renderer = (): Renderer => {
         const tile = await source.getTile(x, y, z);
         const g = style.renderTile(tile);
         g.setAttribute("id", `tile-${x}-${y}-${z}`);
-        const offset = getOffsetForTile({ camera, tile: { x, y } });
-        g.setAttribute("transform", `translate(${offset.x}, ${offset.y})`);
+        const transform = getTransformForTile({ camera, tile: { x, y, z } });
+        g.setAttribute(
+          "transform",
+          `translate(${transform.x}, ${transform.y}) scale(${transform.scale})`,
+        );
         gs.push(g);
       }
 
@@ -53,10 +56,13 @@ export const renderer = (): Renderer => {
       }
 
       for (const { x, y, z } of visibleTiles) {
-        const offset = getOffsetForTile({ camera, tile: { x, y } });
+        const transform = getTransformForTile({ camera, tile: { x, y, z } });
         svg
           .getElementById(`tile-${x}-${y}-${z}`)
-          ?.setAttribute("transform", `translate(${offset.x}, ${offset.y})`);
+          ?.setAttribute(
+            "transform",
+            `translate(${transform.x}, ${transform.y}) scale(${transform.scale})`,
+          );
       }
 
       svg.append(...gs);
@@ -68,12 +74,13 @@ export const renderer = (): Renderer => {
 const getVisibleTiles = (camera: {
   x: number;
   y: number;
-  zoom: number;
+  z: number;
 }): { x: number; y: number; z: number }[] => {
   const x = Math.floor(camera.x),
     y = Math.floor(camera.y),
-    z = camera.zoom;
+    z = camera.z;
   const visibleTiles = [];
+  // produce a grid of 9 tiles with the center containing the camera's position
   for (let i = Math.max(x - 1, 0); i < Math.min(x + 2, 2 ** z); i++) {
     for (let j = Math.max(y - 1, 0); j < Math.min(y + 2, 2 ** z); j++) {
       visibleTiles.push({ x: i, y: j, z });
@@ -82,13 +89,17 @@ const getVisibleTiles = (camera: {
   return visibleTiles;
 };
 
-const getOffsetForTile = ({
+const getTransformForTile = ({
   camera,
   tile,
 }: {
-  camera: { x: number; y: number };
-  tile: { x: number; y: number };
-}) => ({
-  x: (tile.x + 0.5 - camera.x) * TILE_EXTENT,
-  y: (tile.y + 0.5 - camera.y) * TILE_EXTENT,
-});
+  camera: { x: number; y: number; zoom: number };
+  tile: { x: number; y: number; z: number };
+}) => {
+  const scale = 2 ** (camera.zoom - tile.z);
+  return {
+    x: (tile.x + 0.5 / scale - camera.x) * TILE_EXTENT * scale,
+    y: (tile.y + 0.5 / scale - camera.y) * TILE_EXTENT * scale,
+    scale,
+  };
+};
