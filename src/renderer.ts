@@ -1,7 +1,9 @@
 import { TILE_EXTENT } from "./constants.js";
-import type { Renderer } from "./types.js";
+import type { Renderer, Source, Style } from "./types.js";
 
 export const renderer = (): Renderer => {
+  const renderedTileCache = new Map<string, SVGGElement>();
+
   let renderedTiles: { x: number; y: number; z: number }[] = [];
 
   const updateRenderedTiles = (
@@ -38,9 +40,15 @@ export const renderer = (): Renderer => {
       const { added, removed } = updateRenderedTiles(visibleTiles);
 
       const tileElements = [];
+
       for (const { x, y, z } of added) {
-        const tile = await source.getTile(x, y, z);
-        const tileElement = style.renderTile(tile);
+        const tileElement = await getCachedTileOrRender({
+          tile: { x, y, z },
+          cache: renderedTileCache,
+          source,
+          style,
+        });
+
         tileElement.setAttribute("id", `tile-${x}-${y}-${z}`);
         const transform = getTransformForTile({ camera, tile: { x, y, z } });
         tileElement.setAttribute(
@@ -100,4 +108,25 @@ const getTransformForTile = ({
     y: (tile.y + 0.5 / scale - camera.y) * TILE_EXTENT * scale,
     scale,
   };
+};
+
+const getCachedTileOrRender = async ({
+  tile: { x, y, z },
+  cache,
+  source,
+  style,
+}: {
+  tile: { x: number; y: number; z: number };
+  source: Source;
+  style: Style;
+  cache: Map<string, SVGGElement>;
+}) => {
+  const cached = cache.get(`${x}-${y}-${z}`);
+  if (cached) {
+    return cached;
+  }
+  const tileData = await source.getTile(x, y, z);
+  const tileElement = style.renderTile(tileData);
+  cache.set(`${x}-${y}-${z}`, tileElement);
+  return tileElement;
 };

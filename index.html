@@ -16,6 +16,11 @@
                 width: 100%;
                 height: 100%;
             }
+            .map > g {
+                isolation: isolate;
+                contain: strict;
+                will-change: transform;
+            }
             .controls {
                 grid-area: 1 / 1 / 1 / 1;
                 margin-block-start: auto;
