@@ -17,6 +17,15 @@
                 height: 100%;
                 touch-action: none;
             }
+            .map > g {
+                will-change: transform;
+            }
+            .map > use {
+                contain: strict;
+            }
+            .map > symbol {
+                contain: strict;
+            }
             .controls {
                 grid-area: 1 / 1 / 1 / 1;
                 margin-block-start: auto;
@@ -38,7 +47,7 @@
                 svg: document.getElementById("mewmap"),
                 longitude: 24.9384,
                 latitude: 60.1699,
-                zoom: 12,
+                zoom: 14,
             });
 
             window.map = map;

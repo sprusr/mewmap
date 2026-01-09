@@ -38,34 +38,43 @@ export const renderer = (): Renderer => {
       const visibleTiles = getVisibleTiles(camera);
       const { added, removed } = updateRenderedTiles(visibleTiles);
 
-      const gs = [];
+      const elements = [];
       for (const { x, y, z } of added) {
         const tile = await source.getTile(x, y, z);
-        const g = style.renderTile(tile);
-        g.setAttribute("id", `tile-${x}-${y}-${z}`);
+        const symbol = style.renderTile(tile);
+        symbol.setAttribute("id", `tile-${x}-${y}-${z}`);
+        elements.push(symbol);
+
+        const use = document.createElementNS(
+          "http://www.w3.org/2000/svg",
+          "use",
+        );
+        use.setAttribute("id", `use-${x}-${y}-${z}`);
+        use.setAttribute("href", `#${symbol.id}`);
         const transform = getTransformForTile({ camera, tile: { x, y, z } });
-        g.setAttribute(
+        use.setAttribute(
           "transform",
           `translate(${transform.x}, ${transform.y}) scale(${transform.scale})`,
         );
-        gs.push(g);
+        elements.push(use);
       }
 
       for (const { x, y, z } of removed) {
         svg.getElementById(`tile-${x}-${y}-${z}`)?.remove();
+        svg.getElementById(`use-${x}-${y}-${z}`)?.remove();
       }
 
       for (const { x, y, z } of visibleTiles) {
         const transform = getTransformForTile({ camera, tile: { x, y, z } });
         svg
-          .getElementById(`tile-${x}-${y}-${z}`)
+          .getElementById(`use-${x}-${y}-${z}`)
           ?.setAttribute(
             "transform",
             `translate(${transform.x}, ${transform.y}) scale(${transform.scale})`,
           );
       }
 
-      svg.append(...gs);
+      svg.append(...elements);
       svg.setAttribute("viewBox", viewBoxForSvg(camera.viewBox));
     },
   };
@@ -97,9 +106,13 @@ const getTransformForTile = ({
   tile: { x: number; y: number; z: number };
 }) => {
   const scale = 2 ** (camera.zoom - tile.z);
+  const x = (tile.x + 0.5 / scale - camera.x) * TILE_EXTENT * scale;
+  const y = (tile.y + 0.5 / scale - camera.y) * TILE_EXTENT * scale;
+  const decimals = 2;
+  const factor = 10 ** decimals;
   return {
-    x: (tile.x + 0.5 / scale - camera.x) * TILE_EXTENT * scale,
-    y: (tile.y + 0.5 / scale - camera.y) * TILE_EXTENT * scale,
+    x: Math.round((x + Number.EPSILON) * factor) / factor,
+    y: Math.round((y + Number.EPSILON) * factor) / factor,
     scale,
   };
 };
