@@ -2,7 +2,7 @@ import { TILE_EXTENT } from "./constants.js";
 import type { Renderer, Source, Style } from "./types.js";
 
 export const renderer = (): Renderer => {
-  const renderedTileCache = new Map<string, SVGGElement>();
+  const renderedTileCache = new Map<string, SVGElement>();
 
   let renderedTiles: { x: number; y: number; z: number }[] = [];
 
@@ -131,14 +131,14 @@ const getCachedTileOrRender = async ({
   tile: { x: number; y: number; z: number };
   source: Source;
   style: Style;
-  cache: Map<string, SVGGElement>;
+  cache: Map<string, SVGElement>;
 }) => {
   const cached = cache.get(`${x}-${y}-${z}`);
   if (cached) {
     return cached;
   }
   const tileData = await source.getTile(x, y, z);
-  const tileElement = style.renderTile(tileData);
+  const tileElement = style.renderTile({ ...tileData, x, y, z });
   cache.set(`${x}-${y}-${z}`, tileElement);
   return tileElement;
 };
