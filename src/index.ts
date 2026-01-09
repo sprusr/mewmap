@@ -41,6 +41,12 @@ export const mewmap = (options: MewMapOptions): MewMap => {
   };
   requestAnimationFrame(render);
 
+  const idle = () => {
+    // TODO: add/remove tiles
+    requestIdleCallback(idle);
+  };
+  requestIdleCallback(idle);
+
   return map;
 };
 

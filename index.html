@@ -34,6 +34,7 @@
             <button type="button" id="zoom-in">Zoom in</button>
             <button type="button" id="zoom-out">Zoom out</button>
             <button type="button" id="helsinki">Helsinki</button>
+            <button type="button" id="manhattan">Manhattan</button>
         </div>
         <script type="module">
             import { mewmap } from "./src/index.ts";
@@ -61,7 +62,16 @@
                     map.move({
                         latitude: 60.1699,
                         longitude: 24.9384,
-                        zoom: 12,
+                        zoom: 14,
+                    });
+                });
+            document
+                .getElementById("manhattan")
+                .addEventListener("click", () => {
+                    map.move({
+                        latitude: 40.73,
+                        longitude: -73.998,
+                        zoom: 14,
                     });
                 });
         </script>
