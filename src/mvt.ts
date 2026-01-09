@@ -69,11 +69,11 @@ export const decodeGeometry = (feature: Tile_Feature): string | null => {
   let cursorY = 0;
   const svgCommands: string[] = [];
 
-  for (
-    let command = getCommandAt(feature.geometry, 0);
-    command.nextAt !== null;
-    command = getCommandAt(feature.geometry, command.nextAt)
-  ) {
+  let nextAt: number | null = 0;
+  while (nextAt !== null) {
+    const command = getCommandAt(feature.geometry, nextAt);
+    nextAt = command.nextAt;
+
     switch (command.type) {
       case "moveTo":
         for (const [x, y] of command.params) {
