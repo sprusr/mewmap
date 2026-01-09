@@ -1,6 +1,5 @@
 import { TILE_EXTENT } from "./constants.js";
 import type { Renderer } from "./types.js";
-import { viewBoxForSvg } from "./utils.js";
 
 export const renderer = (): Renderer => {
   let renderedTiles: { x: number; y: number; z: number }[] = [];
@@ -38,17 +37,17 @@ export const renderer = (): Renderer => {
       const visibleTiles = getVisibleTiles(camera);
       const { added, removed } = updateRenderedTiles(visibleTiles);
 
-      const gs = [];
+      const tileElements = [];
       for (const { x, y, z } of added) {
         const tile = await source.getTile(x, y, z);
-        const g = style.renderTile(tile);
-        g.setAttribute("id", `tile-${x}-${y}-${z}`);
+        const tileElement = style.renderTile(tile);
+        tileElement.setAttribute("id", `tile-${x}-${y}-${z}`);
         const transform = getTransformForTile({ camera, tile: { x, y, z } });
-        g.setAttribute(
+        tileElement.setAttribute(
           "transform",
           `translate(${transform.x}, ${transform.y}) scale(${transform.scale})`,
         );
-        gs.push(g);
+        tileElements.push(tileElement);
       }
 
       for (const { x, y, z } of removed) {
@@ -65,8 +64,7 @@ export const renderer = (): Renderer => {
           );
       }
 
-      svg.append(...gs);
-      svg.setAttribute("viewBox", viewBoxForSvg(camera.viewBox));
+      svg.append(...tileElements);
     },
   };
 };
