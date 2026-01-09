@@ -21,7 +21,7 @@ export const style = (): Style => {
             element.setAttribute("fill", layer.paint["background-color"]);
           }
           g.appendChild(element);
-        } else if (layer.type === "fill") {
+        } else if (layer.type === "fill" || layer.type === "line") {
           const tileLayer = tile.layers.find(
             (tileLayer) => tileLayer.name === layer["source-layer"],
           );
@@ -48,15 +48,24 @@ export const style = (): Style => {
                 "http://www.w3.org/2000/svg",
                 "path",
               );
-              if (layer.paint["fill-color"] !== undefined) {
-                element.setAttribute("fill", layer.paint["fill-color"]);
-              }
+
+              element.setAttribute(
+                "fill",
+                layer.paint["fill-color"] !== undefined
+                  ? layer.paint["fill-color"]
+                  : "none",
+              );
+              element.setAttribute(
+                "stroke",
+                layer.paint["line-color"] !== undefined
+                  ? layer.paint["line-color"]
+                  : "none",
+              );
+
               element.setAttribute("d", geometry);
               g.appendChild(element);
             }
           }
-        } else if (layer.type === "line") {
-          //
         }
       }
 
