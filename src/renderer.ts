@@ -35,44 +35,56 @@ export const renderer = (): Renderer => {
   };
 
   return {
-    async render({ camera, source, style, svg }) {
-      const visibleTiles = getVisibleTiles(camera);
-      const { added, removed } = updateRenderedTiles(visibleTiles);
+    init({ camera, source, style, svg }) {
+      const render = async () => {
+        const visibleTiles = getVisibleTiles(camera);
 
-      const tileElements = [];
+        for (const { x, y, z } of visibleTiles) {
+          const transform = getTransformForTile({ camera, tile: { x, y, z } });
+          renderedTileCache
+            .get(`${x}-${y}-${z}`)
+            ?.setAttribute(
+              "transform",
+              `translate(${transform.x}, ${transform.y}) scale(${transform.scale})`,
+            );
+        }
 
-      for (const { x, y, z } of added) {
-        const tileElement = await getCachedTileOrRender({
-          tile: { x, y, z },
-          cache: renderedTileCache,
-          source,
-          style,
-        });
+        requestAnimationFrame(render);
+      };
+      requestAnimationFrame(render);
 
-        tileElement.setAttribute("id", `tile-${x}-${y}-${z}`);
-        const transform = getTransformForTile({ camera, tile: { x, y, z } });
-        tileElement.setAttribute(
-          "transform",
-          `translate(${transform.x}, ${transform.y}) scale(${transform.scale})`,
-        );
-        tileElements.push(tileElement);
-      }
+      const idle = async () => {
+        const visibleTiles = getVisibleTiles(camera);
+        const { added, removed } = updateRenderedTiles(visibleTiles);
 
-      for (const { x, y, z } of removed) {
-        svg.getElementById(`tile-${x}-${y}-${z}`)?.remove();
-      }
+        const tileElements = [];
 
-      for (const { x, y, z } of visibleTiles) {
-        const transform = getTransformForTile({ camera, tile: { x, y, z } });
-        svg
-          .getElementById(`tile-${x}-${y}-${z}`)
-          ?.setAttribute(
+        for (const { x, y, z } of added) {
+          const tileElement = await getCachedTileOrRender({
+            tile: { x, y, z },
+            cache: renderedTileCache,
+            source,
+            style,
+          });
+
+          tileElement.setAttribute("id", `tile-${x}-${y}-${z}`);
+          const transform = getTransformForTile({ camera, tile: { x, y, z } });
+          tileElement.setAttribute(
             "transform",
             `translate(${transform.x}, ${transform.y}) scale(${transform.scale})`,
           );
-      }
+          tileElements.push(tileElement);
+        }
 
-      svg.append(...tileElements);
+        for (const { x, y, z } of removed) {
+          svg.getElementById(`tile-${x}-${y}-${z}`)?.remove();
+        }
+
+        svg.append(...tileElements);
+
+        requestIdleCallback(idle);
+      };
+      requestIdleCallback(idle);
     },
   };
 };
