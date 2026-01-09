@@ -1,5 +1,6 @@
 import { TILE_EXTENT } from "./constants.js";
 import type { Renderer, Source, Style } from "./types.js";
+import { requestIdleCallback } from "./utils.js";
 
 export const renderer = (): Renderer => {
   const renderedTileCache = new Map<string, SVGElement>();
