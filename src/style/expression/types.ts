@@ -8,10 +8,19 @@ export type InExpression = readonly [
 
 export type EqualsExpression = readonly ["==", Expression, Expression];
 
+export type NotEqualsExpression = readonly ["!=", Expression, Expression];
+
+export type HasExpression = readonly ["has", string];
+
+export type NotHasExpression = readonly ["!has", string];
+
 export type BooleanExpression =
   | AllExpression
   | InExpression
   | EqualsExpression
+  | NotEqualsExpression
+  | HasExpression
+  | NotHasExpression
   | ["boolean", unknown]
   | boolean;
 export type StringExpression = ["string", unknown] | string;

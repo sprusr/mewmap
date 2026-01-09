@@ -77,6 +77,36 @@ export const evaluate = (
     return leftValue == rightValue;
   }
 
+  if (expression[0] === "!=") {
+    const [left, right] = [expression[1], expression[2]];
+    const leftValue = evaluate(left, context);
+    const rightValue = evaluate(right, context);
+    // biome-ignore lint/suspicious/noDoubleEquals: want loose equality
+    return leftValue != rightValue;
+  }
+
+  if (expression[0] === "has") {
+    const key = expression[1];
+    const value =
+      context.layer !== undefined && context.feature !== undefined
+        ? getFeaturePropertyValue(
+            getFeatureProperty(context.layer, context.feature, key),
+          )
+        : undefined;
+    return value !== undefined;
+  }
+
+  if (expression[0] === "!has") {
+    const key = expression[1];
+    const value =
+      context.layer !== undefined && context.feature !== undefined
+        ? getFeaturePropertyValue(
+            getFeatureProperty(context.layer, context.feature, key),
+          )
+        : undefined;
+    return value === undefined;
+  }
+
   if (expression[0] === "boolean") {
     //
   }

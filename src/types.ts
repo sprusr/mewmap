@@ -64,7 +64,7 @@ export type Source = {
 };
 
 export type Style = {
-  renderTile(tile: Tile): SVGGElement;
+  renderTile(tile: Tile & { x: number; y: number; z: number }): SVGElement;
 };
 
 export type Renderer = {
