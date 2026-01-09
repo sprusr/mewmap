@@ -68,12 +68,12 @@ export type Style = {
 };
 
 export type Renderer = {
-  render(params: {
+  init(params: {
     camera: Camera;
     source: Source;
     style: Style;
     svg: SVGSVGElement;
-  }): Promise<void>;
+  }): void;
 };
 
 export type MewMapOptions = {

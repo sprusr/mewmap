@@ -10,8 +10,6 @@ export const mewmap = (options: MewMapOptions): MewMap => {
     throw new Error("svg option must be an svg element");
   }
 
-  let needsRender = true;
-
   const map: MewMap = {
     camera: camera({
       ...options,
@@ -22,7 +20,6 @@ export const mewmap = (options: MewMapOptions): MewMap => {
     }),
     move(params) {
       this.camera.move(params);
-      needsRender = true;
     },
     source: source(),
     style: style(),
@@ -30,22 +27,9 @@ export const mewmap = (options: MewMapOptions): MewMap => {
     renderer: renderer(),
   };
 
+  map.renderer.init(map);
+
   addEventListeners(map);
-
-  const render = () => {
-    if (needsRender) {
-      needsRender = false;
-      void map.renderer.render(map);
-    }
-    requestAnimationFrame(render);
-  };
-  requestAnimationFrame(render);
-
-  const idle = () => {
-    // TODO: add/remove tiles
-    requestIdleCallback(idle);
-  };
-  requestIdleCallback(idle);
 
   return map;
 };
