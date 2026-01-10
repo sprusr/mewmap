@@ -60,11 +60,50 @@ export type Camera = {
 };
 
 export type Source = {
-  getTile(x: number, y: number, z: number): Promise<Tile>;
+  fetch(x: number, y: number, z: number): Promise<Tile>;
+};
+
+type PreparedFeatureGeometryCommand =
+  | { type: "move_to"; x: number; y: number }
+  | { type: "line_to"; points: Array<{ x: number; y: number }> }
+  | { type: "close_path" }
+  | { type: "reset" };
+
+export type PreparedFeatureGeometry = {
+  type: "point" | "linestring" | "polygon";
+  commands: Array<PreparedFeatureGeometryCommand>;
+};
+
+export type PreparedFeatureStyle = {
+  fill: string | undefined;
+  stroke: string | undefined;
+  strokeWidth: number | undefined;
+  opacity: number | undefined;
+};
+
+export type PreparedFeature = {
+  geometry: PreparedFeatureGeometry;
+  /** Style properties which do not change based on state. */
+  static: Partial<PreparedFeatureStyle>;
+  /** Returns style properties which change based on map and feature state. */
+  dynamic?: (params: {
+    zoom: number;
+    /** Feature state */
+    state: Record<string, unknown>;
+  }) => Partial<PreparedFeatureStyle>;
+};
+
+export type PreparedLayer = {
+  features: Array<PreparedFeature>;
+};
+
+export type PreparedTile = {
+  layers: Record<string, PreparedLayer>;
 };
 
 export type Style = {
-  renderTile(tile: Tile & { x: number; y: number; z: number }): SVGElement;
+  readonly background: string | null;
+  prepare(tile: Tile & { x: number; y: number; z: number }): PreparedTile;
 };
 
 export type Renderer = {

@@ -28,7 +28,7 @@ export const source = (): Source => {
   const tileCache = new Map<string, Tile>();
 
   return {
-    async getTile(x, y, z) {
+    async fetch(x, y, z) {
       const cached = tileCache.get(`${x}-${y}-${z}`);
       if (cached) return cached;
 

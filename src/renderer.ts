@@ -1,5 +1,5 @@
 import { TILE_EXTENT } from "./constants.js";
-import type { Renderer, Source, Style } from "./types.js";
+import type { PreparedTile, Renderer, Source, Style } from "./types.js";
 import { requestIdleCallback } from "./utils.js";
 
 export const renderer = (): Renderer => {
@@ -37,6 +37,8 @@ export const renderer = (): Renderer => {
 
   return {
     init({ camera, source, style, svg }) {
+      svg.style.background = style.background ?? "none";
+
       const render = async () => {
         const visibleTiles = getVisibleTiles(camera);
 
@@ -61,7 +63,7 @@ export const renderer = (): Renderer => {
         const tileElements = [];
 
         for (const { x, y, z } of added) {
-          const tileElement = await getCachedTileOrRender({
+          const tileElement = await renderTileCached({
             tile: { x, y, z },
             cache: renderedTileCache,
             source,
@@ -123,7 +125,7 @@ const getTransformForTile = ({
   };
 };
 
-const getCachedTileOrRender = async ({
+const renderTileCached = async ({
   tile: { x, y, z },
   cache,
   source,
@@ -138,8 +140,51 @@ const getCachedTileOrRender = async ({
   if (cached) {
     return cached;
   }
-  const tileData = await source.getTile(x, y, z);
-  const tileElement = style.renderTile({ ...tileData, x, y, z });
-  cache.set(`${x}-${y}-${z}`, tileElement);
-  return tileElement;
+  const tile = await source.fetch(x, y, z);
+  const preparedTile = style.prepare({ ...tile, x, y, z });
+  const renderedTile = renderTile(preparedTile);
+  cache.set(`${x}-${y}-${z}`, renderedTile);
+  return renderedTile;
+};
+
+const renderTile = (tile: PreparedTile): SVGElement => {
+  const element = document.createElementNS("http://www.w3.org/2000/svg", "g");
+
+  for (const layer of Object.values(tile.layers)) {
+    for (const feature of layer.features) {
+      const path = document.createElementNS(
+        "http://www.w3.org/2000/svg",
+        "path",
+      );
+      const d = feature.geometry.commands
+        .map((command) => {
+          switch (command.type) {
+            case "move_to":
+              return `m${command.x} ${command.y}`;
+            case "line_to":
+              return command.points
+                .map((point) => `l${point.x} ${point.y}`)
+                .join("");
+            case "close_path":
+              return "z";
+            case "reset":
+              return "M0 0";
+            default:
+              throw new Error("Unknown command type");
+          }
+        })
+        .join("");
+      path.setAttribute("d", d);
+      path.setAttribute("fill", feature.static.fill ?? "none");
+      path.setAttribute("stroke", feature.static.stroke ?? "none");
+      path.setAttribute(
+        "stroke-width",
+        feature.static.strokeWidth?.toString() ?? "1",
+      );
+      path.setAttribute("opacity", feature.static.opacity?.toString() ?? "1");
+      element.appendChild(path);
+    }
+  }
+
+  return element;
 };

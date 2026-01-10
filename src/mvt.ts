@@ -1,4 +1,5 @@
 import { type Tile_Feature, Tile_GeomType } from "./gen/vector_tile_pb.js";
+import type { PreparedFeatureGeometry } from "./types.js";
 
 type Command = {
   nextAt: number | null;
@@ -55,7 +56,9 @@ const getCommandAt = (geometry: number[], at: number): Command => {
   };
 };
 
-export const decodeGeometry = (feature: Tile_Feature): string | null => {
+export const decodeGeometry = (
+  feature: Tile_Feature,
+): PreparedFeatureGeometry | null => {
   if (feature.type === Tile_GeomType.UNKNOWN) {
     return null;
   }
@@ -65,9 +68,13 @@ export const decodeGeometry = (feature: Tile_Feature): string | null => {
     return null;
   }
 
+  const geometry: PreparedFeatureGeometry = {
+    type: feature.type === Tile_GeomType.LINESTRING ? "linestring" : "polygon",
+    commands: [],
+  };
+
   let cursorX = 0;
   let cursorY = 0;
-  const svgCommands: string[] = [];
 
   let nextAt: number | null = 0;
   while (nextAt !== null) {
@@ -77,25 +84,31 @@ export const decodeGeometry = (feature: Tile_Feature): string | null => {
     switch (command.type) {
       case "moveTo":
         for (const [x, y] of command.params) {
-          svgCommands.push(`m ${x},${y}`);
-          cursorX += x;
-          cursorY += y;
+          geometry.commands.push({ type: "move_to", x, y });
+          cursorX = 0;
+          cursorY = 0;
         }
         break;
       case "lineTo":
-        svgCommands.push("l");
-        for (const [x, y] of command.params) {
-          svgCommands.push(`${x},${y}`);
-          cursorX += x;
-          cursorY += y;
-        }
+        geometry.commands.push({
+          type: "line_to",
+          points: command.params.map(([x, y]) => {
+            cursorX += x;
+            cursorY += y;
+            return { x, y };
+          }),
+        });
         break;
       case "closePath":
-        svgCommands.push("z");
-        svgCommands.push(`M ${cursorX},${cursorY}`);
+        geometry.commands.push({ type: "close_path" });
+        // mvt geometry does not move cursor when closing path, but our
+        // close_path command does
+        geometry.commands.push({ type: "move_to", x: cursorX, y: cursorY });
+        cursorX = 0;
+        cursorY = 0;
         break;
     }
   }
 
-  return svgCommands.join(" ");
+  return geometry;
 };
