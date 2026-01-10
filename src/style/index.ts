@@ -1,32 +1,27 @@
 import { TILE_EXTENT } from "../constants.js";
 import { decodeGeometry } from "../mvt.js";
-import type { Style } from "../types.js";
+import type { PreparedTile, Style } from "../types.js";
 import { LAYERS } from "./constants.js";
 import { evaluate } from "./expression/index.js";
 import { stops } from "./expression/utils.js";
 
 export const style = (): Style => {
   return {
-    renderTile(tile) {
-      const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
-
+    background:
+      LAYERS.find((layer) => layer.type === "background")?.paint[
+        "background-color"
+      ] ?? null,
+    prepare(tile) {
       const filteredLayers = LAYERS.filter(
-        (layer) => layer.minzoom === undefined || layer.minzoom <= tile.z,
+        (layer) =>
+          (layer.minzoom === undefined || layer.minzoom <= tile.z) &&
+          layer.type !== "background",
       );
 
+      const preparedTile: PreparedTile = { layers: {} };
+
       for (const layer of filteredLayers) {
-        if (layer.type === "background") {
-          const element = document.createElementNS(
-            "http://www.w3.org/2000/svg",
-            "rect",
-          );
-          element.setAttribute("width", TILE_EXTENT.toString());
-          element.setAttribute("height", TILE_EXTENT.toString());
-          if (layer.paint["background-color"] !== undefined) {
-            element.setAttribute("fill", layer.paint["background-color"]);
-          }
-          g.appendChild(element);
-        } else if (layer.type === "fill" || layer.type === "line") {
+        if (layer.type === "fill" || layer.type === "line") {
           const tileLayer = tile.layers.find(
             (tileLayer) => tileLayer.name === layer["source-layer"],
           );
@@ -49,65 +44,64 @@ export const style = (): Style => {
           const geometry = tileFeatures
             .map((tileFeature) => decodeGeometry(tileFeature))
             .filter((geometry) => geometry !== null)
-            .join("M 0,0");
+            .filter((geometry) =>
+              layer.type === "fill"
+                ? geometry.type === "polygon"
+                : geometry.type === "linestring",
+            )
+            .reduce(
+              (acc, geometry) => {
+                acc.commands.push(
+                  ...(acc.commands.length
+                    ? [{ type: "reset" as const }, ...geometry.commands]
+                    : geometry.commands),
+                );
+                return acc;
+              },
+              {
+                type: layer.type === "fill" ? "polygon" : "linestring",
+                commands: [],
+              },
+            );
 
-          const element = document.createElementNS(
-            "http://www.w3.org/2000/svg",
-            "path",
-          );
-
-          element.setAttribute(
-            "fill",
-            layer.paint["fill-color"] !== undefined
-              ? layer.paint["fill-color"]
-              : "none",
-          );
-          element.setAttribute(
-            "stroke",
-            layer.paint["line-color"] !== undefined
-              ? layer.paint["line-color"]
-              : "none",
-          );
-          element.setAttribute(
-            "stroke-width",
-            layer.paint["line-width"] !== undefined
-              ? stops(
-                  tile.z,
-                  layer.paint["line-width"].stops as [number, number][],
-                ).toString()
-              : "0",
-          );
-
-          const getOpacity = (layer: (typeof LAYERS)[number]): number => {
-            if (layer.type === "fill") {
-              return layer.paint["fill-opacity"] !== undefined
-                ? typeof layer.paint["fill-opacity"] !== "number"
+          const feature = {
+            geometry,
+            static: {
+              fill: layer.paint["fill-color"],
+              stroke: layer.paint["line-color"],
+              strokeWidth:
+                layer.paint["line-width"] !== undefined
                   ? stops(
                       tile.z,
-                      layer.paint["fill-opacity"].stops as [number, number][],
+                      layer.paint["line-width"].stops as [number, number][],
                     )
-                  : layer.paint["fill-opacity"]
-                : 1;
-            } else if (layer.type === "line") {
-              return layer.paint["line-opacity"] !== undefined
-                ? typeof layer.paint["line-opacity"] !== "number"
-                  ? stops(
-                      tile.z,
-                      layer.paint["line-opacity"].stops as [number, number][],
-                    )
-                  : layer.paint["line-opacity"]
-                : 1;
-            }
-            return 1;
+                  : undefined,
+              opacity: getOpacity(layer, tile.z),
+            },
           };
-          element.setAttribute("opacity", getOpacity(layer).toString());
 
-          element.setAttribute("d", geometry);
-          g.appendChild(element);
+          preparedTile.layers[layer.id] = { features: [feature] };
         }
       }
 
-      return g;
+      return preparedTile;
     },
   };
+};
+
+const getOpacity = (layer: (typeof LAYERS)[number], z: number): number => {
+  if (layer.type === "fill") {
+    return layer.paint["fill-opacity"] !== undefined
+      ? typeof layer.paint["fill-opacity"] !== "number"
+        ? stops(z, layer.paint["fill-opacity"].stops as [number, number][])
+        : layer.paint["fill-opacity"]
+      : 1;
+  } else if (layer.type === "line") {
+    return layer.paint["line-opacity"] !== undefined
+      ? typeof layer.paint["line-opacity"] !== "number"
+        ? stops(z, layer.paint["line-opacity"].stops as [number, number][])
+        : layer.paint["line-opacity"]
+      : 1;
+  }
+  return 1;
 };

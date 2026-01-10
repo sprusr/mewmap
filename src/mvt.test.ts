@@ -11,6 +11,12 @@ describe("mvt parser", () => {
       type: 2,
     });
     const decoded = decodeGeometry(feature);
-    expect(decoded).toBe("m 472,998 l -2,-34");
+    expect(decoded).toEqual({
+      type: "linestring",
+      commands: [
+        { type: "move_to", x: 472, y: 998 },
+        { type: "line_to", points: [{ x: -2, y: -34 }] },
+      ],
+    });
   });
 });
