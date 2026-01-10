@@ -2,27 +2,39 @@ import { TILE_EXTENT } from "./constants.js";
 import type { PreparedTile, Renderer, Source, Style } from "./types.js";
 import { requestIdleCallback } from "./utils.js";
 
+type TileCoordinates = {
+  x: number;
+  y: number;
+  z: number;
+};
+
+type RenderedTile = {
+  coordinates: TileCoordinates;
+  element: SVGElement;
+};
+
 export const renderer = (): Renderer => {
-  const renderedTileCache = new Map<string, SVGElement>();
+  const tileCache = new Map<`${number}-${number}-${number}`, RenderedTile>();
+  const visibleTiles = new Set<RenderedTile>();
 
-  let renderedTiles: { x: number; y: number; z: number }[] = [];
+  let wantedTiles: TileCoordinates[] = [];
 
-  const updateRenderedTiles = (
-    tiles: { x: number; y: number; z: number }[],
+  const updateWantedTiles = (
+    tiles: TileCoordinates[],
   ): {
-    added: { x: number; y: number; z: number }[];
-    removed: { x: number; y: number; z: number }[];
+    added: TileCoordinates[];
+    removed: TileCoordinates[];
   } => {
     const added = tiles.filter(
       (tile) =>
-        !renderedTiles.find(
+        !wantedTiles.find(
           (renderedTile) =>
             tile.x === renderedTile.x &&
             tile.y === renderedTile.y &&
             tile.z === renderedTile.z,
         ),
     );
-    const removed = renderedTiles.filter(
+    const removed = wantedTiles.filter(
       (renderedTile) =>
         !tiles.find(
           (tile) =>
@@ -31,7 +43,7 @@ export const renderer = (): Renderer => {
             tile.z === renderedTile.z,
         ),
     );
-    renderedTiles = tiles;
+    wantedTiles = tiles;
     return { added, removed };
   };
 
@@ -40,16 +52,18 @@ export const renderer = (): Renderer => {
       svg.style.background = style.background ?? "none";
 
       const render = async () => {
-        const visibleTiles = getVisibleTiles(camera);
-
-        for (const { x, y, z } of visibleTiles) {
-          const transform = getTransformForTile({ camera, tile: { x, y, z } });
-          renderedTileCache
-            .get(`${x}-${y}-${z}`)
-            ?.setAttribute(
-              "transform",
-              `translate(${transform.x}, ${transform.y}) scale(${transform.scale})`,
-            );
+        for (const {
+          coordinates: { x, y, z },
+          element,
+        } of visibleTiles) {
+          const transform = calculateTransformForTile({
+            camera,
+            tile: { x, y, z },
+          });
+          element.setAttribute(
+            "transform",
+            `translate(${transform.x}, ${transform.y}) scale(${transform.scale})`,
+          );
         }
 
         requestAnimationFrame(render);
@@ -57,33 +71,41 @@ export const renderer = (): Renderer => {
       requestAnimationFrame(render);
 
       const idle = async () => {
-        const visibleTiles = getVisibleTiles(camera);
-        const { added, removed } = updateRenderedTiles(visibleTiles);
+        const wantedTiles = calculateWantedTiles(camera);
+        const { added, removed } = updateWantedTiles(wantedTiles);
 
-        const tileElements = [];
+        const addedElements = [];
 
         for (const { x, y, z } of added) {
-          const tileElement = await renderTileCached({
+          const tile = await renderTileCached({
             tile: { x, y, z },
-            cache: renderedTileCache,
+            cache: tileCache,
             source,
             style,
           });
 
-          tileElement.setAttribute("id", `tile-${x}-${y}-${z}`);
-          const transform = getTransformForTile({ camera, tile: { x, y, z } });
-          tileElement.setAttribute(
+          tile.element.setAttribute("id", `tile-${x}-${y}-${z}`);
+          const transform = calculateTransformForTile({
+            camera,
+            tile: { x, y, z },
+          });
+          tile.element.setAttribute(
             "transform",
             `translate(${transform.x}, ${transform.y}) scale(${transform.scale})`,
           );
-          tileElements.push(tileElement);
+          visibleTiles.add(tile);
+          addedElements.push(tile.element);
         }
+
+        svg.append(...addedElements);
 
         for (const { x, y, z } of removed) {
-          svg.getElementById(`tile-${x}-${y}-${z}`)?.remove();
+          const tile = tileCache.get(`${x}-${y}-${z}`);
+          if (tile) {
+            tile.element.remove();
+            visibleTiles.delete(tile);
+          }
         }
-
-        svg.append(...tileElements);
 
         requestIdleCallback(idle);
       };
@@ -92,7 +114,7 @@ export const renderer = (): Renderer => {
   };
 };
 
-const getVisibleTiles = (camera: {
+const calculateWantedTiles = (camera: {
   x: number;
   y: number;
   z: number;
@@ -110,7 +132,7 @@ const getVisibleTiles = (camera: {
   return visibleTiles;
 };
 
-const getTransformForTile = ({
+const calculateTransformForTile = ({
   camera,
   tile,
 }: {
@@ -134,15 +156,18 @@ const renderTileCached = async ({
   tile: { x: number; y: number; z: number };
   source: Source;
   style: Style;
-  cache: Map<string, SVGElement>;
-}) => {
+  cache: Map<string, RenderedTile>;
+}): Promise<RenderedTile> => {
   const cached = cache.get(`${x}-${y}-${z}`);
   if (cached) {
     return cached;
   }
   const tile = await source.fetch(x, y, z);
   const preparedTile = style.prepare({ ...tile, x, y, z });
-  const renderedTile = renderTile(preparedTile);
+  const renderedTile = {
+    coordinates: { x, y, z },
+    element: renderTile(preparedTile),
+  };
   cache.set(`${x}-${y}-${z}`, renderedTile);
   return renderedTile;
 };
