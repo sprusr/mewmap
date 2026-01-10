@@ -76,6 +76,10 @@ export type Renderer = {
   }): void;
 };
 
+export type UI = {
+  init(params: { camera: Camera; svg: SVGSVGElement }): void;
+};
+
 export type MewMapOptions = {
   longitude?: number;
   latitude?: number;
@@ -89,6 +93,7 @@ export type MewMap = {
   readonly style: Style;
   readonly svg: SVGSVGElement;
   readonly renderer: Renderer;
+  readonly ui: UI;
   move(position: {
     longitude?: number;
     latitude?: number;
