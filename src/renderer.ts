@@ -84,15 +84,17 @@ export const renderer = (): Renderer => {
             style,
           });
 
-          tile.element.setAttribute("id", `tile-${x}-${y}-${z}`);
           const transform = calculateTransformForTile({
             camera,
             tile: { x, y, z },
           });
+
           tile.element.setAttribute(
             "transform",
             `translate(${transform.x}, ${transform.y}) scale(${transform.scale})`,
           );
+          tile.element.setAttribute("id", `tile-${x}-${y}-${z}`);
+
           visibleTiles.add(tile);
           addedElements.push(tile.element);
         }
