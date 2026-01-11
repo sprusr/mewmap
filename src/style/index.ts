@@ -80,7 +80,10 @@ export const style = (): Style => {
             },
           };
 
-          preparedTile.layers[layer.id] = { features: [feature] };
+          preparedTile.layers[layer.id] = {
+            name: layer.id,
+            features: [feature],
+          };
         }
       }
 

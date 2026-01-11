@@ -64,7 +64,7 @@ export const camera = (options: CameraOptions): Camera => {
       return { longitude, latitude };
     },
     coordinatesToTile(coordinates) {
-      return coordinatesToTile({ ...coordinates, z });
+      return coordinatesToTile({ ...coordinates, z: coordinates.z ?? z });
     },
   };
 };

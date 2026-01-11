@@ -50,10 +50,14 @@ export type Camera = {
     latitude: number;
   };
   /**
-   * Project the given longitude and latitude to tile coordinates at the current
-   * zoom level.
+   * Project the given longitude and latitude to xy tile coordinates at the
+   * current zoom level, or provided tile z coordinate.
    */
-  coordinatesToTile(coordinates: { longitude: number; latitude: number }): {
+  coordinatesToTile(coordinates: {
+    longitude: number;
+    latitude: number;
+    z?: number;
+  }): {
     x: number;
     y: number;
   };
@@ -94,6 +98,7 @@ export type PreparedFeature = {
 };
 
 export type PreparedLayer = {
+  name: string;
   features: Array<PreparedFeature>;
 };
 
