@@ -138,13 +138,26 @@ const calculateTransformForTile = ({
   camera,
   tile,
 }: {
-  camera: { x: number; y: number; zoom: number };
+  camera: {
+    longitude: number;
+    latitude: number;
+    zoom: number;
+    coordinatesToTile: (coordinates: {
+      longitude: number;
+      latitude: number;
+      z: number;
+    }) => { x: number; y: number };
+  };
   tile: { x: number; y: number; z: number };
 }) => {
+  const { x: cameraX, y: cameraY } = camera.coordinatesToTile({
+    ...camera,
+    ...tile,
+  });
   const scale = 2 ** (camera.zoom - tile.z);
   return {
-    x: (tile.x + 0.5 / scale - camera.x) * TILE_EXTENT * scale,
-    y: (tile.y + 0.5 / scale - camera.y) * TILE_EXTENT * scale,
+    x: (tile.x * scale + 0.5 - cameraX * scale) * TILE_EXTENT,
+    y: (tile.y * scale + 0.5 - cameraY * scale) * TILE_EXTENT,
     scale,
   };
 };
@@ -183,6 +196,9 @@ const renderTile = (tile: PreparedTile): SVGElement => {
         "http://www.w3.org/2000/svg",
         "path",
       );
+
+      path.setAttribute("data-layername", layer.name);
+
       const d = feature.geometry.commands
         .map((command) => {
           switch (command.type) {
