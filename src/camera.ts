@@ -1,4 +1,4 @@
-import { MAX_TILE_Z, MAX_ZOOM, MIN_TILE_Z, TILE_EXTENT } from "./constants.js";
+import { MAX_TILE_Z, MAX_ZOOM, MIN_TILE_Z, VIEWBOX_SIZE } from "./constants.js";
 import type { Camera, CameraOptions } from "./types.js";
 
 export const camera = (options: CameraOptions): Camera => {
@@ -51,8 +51,8 @@ export const camera = (options: CameraOptions): Camera => {
       const svgY = (position.y / screen.height) * viewBox.height + viewBox.y;
       const scale = 2 ** (zoom - z);
       return {
-        x: svgX / TILE_EXTENT / scale + x - 0.5 * scale,
-        y: svgY / TILE_EXTENT / scale + y - 0.5 * scale,
+        x: svgX / VIEWBOX_SIZE / scale + x - 0.5 * scale,
+        y: svgY / VIEWBOX_SIZE / scale + y - 0.5 * scale,
       };
     },
     tileToCoordinates(tile) {
@@ -72,14 +72,14 @@ export const camera = (options: CameraOptions): Camera => {
 const calculateViewBox = (screen: { width: number; height: number }) => {
   const width =
     screen.width > screen.height
-      ? TILE_EXTENT
-      : (screen.width / screen.height) * TILE_EXTENT;
+      ? VIEWBOX_SIZE
+      : (screen.width / screen.height) * VIEWBOX_SIZE;
   const height =
     screen.height > screen.width
-      ? TILE_EXTENT
-      : (screen.height / screen.width) * TILE_EXTENT;
-  const x = width < TILE_EXTENT ? (TILE_EXTENT - width) / 2 : 0;
-  const y = height < TILE_EXTENT ? (TILE_EXTENT - height) / 2 : 0;
+      ? VIEWBOX_SIZE
+      : (screen.height / screen.width) * VIEWBOX_SIZE;
+  const x = width < VIEWBOX_SIZE ? (VIEWBOX_SIZE - width) / 2 : 0;
+  const y = height < VIEWBOX_SIZE ? (VIEWBOX_SIZE - height) / 2 : 0;
   return { x, y, width, height };
 };
 

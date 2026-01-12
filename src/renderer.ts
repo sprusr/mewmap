@@ -1,4 +1,4 @@
-import { TILE_EXTENT } from "./constants.js";
+import { TILE_EXTENT, VIEWBOX_SIZE } from "./constants.js";
 import type { PreparedTile, Renderer, Source, Style } from "./types.js";
 import { requestIdleCallback } from "./utils.js";
 
@@ -51,31 +51,29 @@ export const renderer = (): Renderer => {
     init({ camera, source, style, svg, ui }) {
       svg.style.background = style.background ?? "none";
 
+      const transformGroupElement = document.createElementNS(
+        "http://www.w3.org/2000/svg",
+        "g",
+      );
+
       for (const layer of style.layers) {
-        const element = document.createElementNS(
+        const layerGroupElement = document.createElementNS(
           "http://www.w3.org/2000/svg",
           "g",
         );
-        element.setAttribute("id", `layer-${layer.name}`);
-        svg.appendChild(element);
+        layerGroupElement.setAttribute("id", `layer-${layer.name}`);
+        transformGroupElement.appendChild(layerGroupElement);
       }
 
+      svg.appendChild(transformGroupElement);
+
       const render = async () => {
-        for (const {
-          coordinates: { x, y, z },
-          layerElements,
-        } of visibleTiles) {
-          const transform = calculateTransformForTile({
-            camera,
-            tile: { x, y, z },
-          });
-          for (const element of Object.values(layerElements)) {
-            element.setAttribute(
-              "transform",
-              `translate(${transform.x}, ${transform.y}) scale(${transform.scale})`,
-            );
-          }
-        }
+        const transform = calculateTransformForCamera({ camera });
+
+        transformGroupElement.setAttribute(
+          "transform",
+          `scale(${transform.scale}) translate(${transform.x}, ${transform.y})`,
+        );
 
         requestAnimationFrame(render);
       };
@@ -102,7 +100,6 @@ export const renderer = (): Renderer => {
           });
 
           const transform = calculateTransformForTile({
-            camera,
             tile: { x, y, z },
           });
 
@@ -175,31 +172,35 @@ const calculateWantedTiles = (
   ];
 };
 
-const calculateTransformForTile = ({
+const calculateTransformForCamera = ({
   camera,
-  tile,
 }: {
   camera: {
-    longitude: number;
-    latitude: number;
+    x: number;
+    y: number;
+    z: number;
     zoom: number;
-    coordinatesToTile: (coordinates: {
-      longitude: number;
-      latitude: number;
-      z: number;
-    }) => { x: number; y: number };
   };
+}) => {
+  const n = 2 ** camera.z;
+  const scale = 2 ** camera.zoom;
+  return {
+    x: 0 - (VIEWBOX_SIZE / n) * camera.x + VIEWBOX_SIZE / 2 / scale,
+    y: 0 - (VIEWBOX_SIZE / n) * camera.y + VIEWBOX_SIZE / 2 / scale,
+    scale,
+  };
+};
+
+const calculateTransformForTile = ({
+  tile,
+}: {
   tile: { x: number; y: number; z: number };
 }) => {
-  const { x: cameraX, y: cameraY } = camera.coordinatesToTile({
-    ...camera,
-    ...tile,
-  });
-  const scale = 2 ** (camera.zoom - tile.z);
+  const n = 2 ** tile.z;
   return {
-    x: (tile.x * scale + 0.5 - cameraX * scale) * TILE_EXTENT,
-    y: (tile.y * scale + 0.5 - cameraY * scale) * TILE_EXTENT,
-    scale,
+    x: (VIEWBOX_SIZE / n) * tile.x,
+    y: (VIEWBOX_SIZE / n) * tile.y,
+    scale: VIEWBOX_SIZE / TILE_EXTENT / n,
   };
 };
 

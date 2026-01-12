@@ -4,6 +4,8 @@
  */
 export const TILE_EXTENT = 4096;
 
+export const VIEWBOX_SIZE = 2 ** 16;
+
 export const MIN_TILE_Z = 0;
 
 export const MAX_TILE_Z = 14;
