@@ -1,82 +1,76 @@
 <!doctype html>
 <html lang="en">
-    <head>
-        <meta charset="UTF-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>mewmap</title>
-        <style>
-            body {
-                margin: 0;
-                display: grid;
-                grid-template-columns: 100dvw;
-                grid-template-rows: 100dvh;
-            }
-            .map {
-                grid-area: 1 / 1 / 1 / 1;
-                width: 100%;
-                height: 100%;
-            }
-            .map > g > g {
-                isolation: isolate;
-                contain: strict;
-                will-change: transform;
-            }
-            .map > g > g > path {
-                shape-rendering: optimizeSpeed;
-            }
-            .controls {
-                grid-area: 1 / 1 / 1 / 1;
-                margin-block-start: auto;
-                padding: 8px;
-            }
-        </style>
-    </head>
-    <body>
-        <svg class="map" id="mewmap"></svg>
-        <div class="controls">
-            <button type="button" id="zoom-in">Zoom in</button>
-            <button type="button" id="zoom-out">Zoom out</button>
-            <button type="button" id="helsinki">Helsinki</button>
-            <button type="button" id="manhattan">Manhattan</button>
-        </div>
-        <script type="module">
-            import { mewmap } from "./src/index.ts";
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>mewmap</title>
+    <style>
+      body {
+        margin: 0;
+        display: grid;
+        grid-template-columns: 100dvw;
+        grid-template-rows: 100dvh;
+      }
+      .map {
+        grid-area: 1 / 1 / 1 / 1;
+        width: 100%;
+        height: 100%;
+      }
+      .map > g {
+        isolation: isolate;
+        contain: strict;
+        will-change: transform;
+      }
+      .map path {
+        shape-rendering: optimizeSpeed;
+      }
+      .controls {
+        grid-area: 1 / 1 / 1 / 1;
+        margin-block-start: auto;
+        padding: 8px;
+      }
+    </style>
+  </head>
+  <body>
+    <svg class="map" id="mewmap"></svg>
+    <div class="controls">
+      <button type="button" id="zoom-in">Zoom in</button>
+      <button type="button" id="zoom-out">Zoom out</button>
+      <button type="button" id="helsinki">Helsinki</button>
+      <button type="button" id="manhattan">Manhattan</button>
+    </div>
+    <script type="module">
+      import { mewmap } from "./src/index.ts";
 
-            const map = mewmap({
-                svg: document.getElementById("mewmap"),
-                longitude: 24.9384,
-                latitude: 60.1699,
-                zoom: 14,
-            });
+      const map = mewmap({
+        svg: document.getElementById("mewmap"),
+        longitude: 24.9384,
+        latitude: 60.1699,
+        zoom: 14,
+      });
 
-            window.map = map;
+      window.map = map;
 
-            document.getElementById("zoom-in").addEventListener("click", () => {
-                map.move({ zoom: map.camera.zoom + 0.5 });
-            });
-            document
-                .getElementById("zoom-out")
-                .addEventListener("click", () => {
-                    map.move({ zoom: map.camera.zoom - 0.5 });
-                });
-            document
-                .getElementById("helsinki")
-                .addEventListener("click", () => {
-                    map.move({
-                        latitude: 60.1699,
-                        longitude: 24.9384,
-                        zoom: 14,
-                    });
-                });
-            document
-                .getElementById("manhattan")
-                .addEventListener("click", () => {
-                    map.move({
-                        latitude: 40.73,
-                        longitude: -73.998,
-                        zoom: 14,
-                    });
-                });
-        </script>
-    </body>
+      document.getElementById("zoom-in").addEventListener("click", () => {
+        map.move({ zoom: map.camera.zoom + 0.5 });
+      });
+      document.getElementById("zoom-out").addEventListener("click", () => {
+        map.move({ zoom: map.camera.zoom - 0.5 });
+      });
+      document.getElementById("helsinki").addEventListener("click", () => {
+        map.move({
+          latitude: 60.1699,
+          longitude: 24.9384,
+          zoom: 14,
+        });
+      });
+      document.getElementById("manhattan").addEventListener("click", () => {
+        map.move({
+          latitude: 40.73,
+          longitude: -73.998,
+          zoom: 14,
+        });
+      });
+    </script>
+  </body>
 </html>
