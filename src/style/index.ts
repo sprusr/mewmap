@@ -11,6 +11,7 @@ export const style = (): Style => {
       LAYERS.find((layer) => layer.type === "background")?.paint[
         "background-color"
       ] ?? null,
+    layers: LAYERS.map((layer) => ({ name: layer.id })),
     prepare(tile) {
       const filteredLayers = LAYERS.filter(
         (layer) =>
