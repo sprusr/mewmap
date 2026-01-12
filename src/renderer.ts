@@ -48,7 +48,7 @@ export const renderer = (): Renderer => {
   };
 
   return {
-    init({ camera, source, style, svg }) {
+    init({ camera, source, style, svg, ui }) {
       svg.style.background = style.background ?? "none";
 
       const render = async () => {
@@ -71,7 +71,15 @@ export const renderer = (): Renderer => {
       requestAnimationFrame(render);
 
       const idle = async () => {
-        const wantedTiles = calculateWantedTiles(camera);
+        // proper idle scheduling not possible, wait until user stops interacting
+        if (globalThis.requestIdleCallback === undefined && ui.interacting) {
+          requestIdleCallback(idle);
+          return;
+        }
+
+        const wantedTiles = calculateWantedTiles(camera, {
+          expanded: true,
+        });
         const { added, removed } = updateWantedTiles(wantedTiles);
 
         const addedElements = [];
@@ -116,22 +124,37 @@ export const renderer = (): Renderer => {
   };
 };
 
-const calculateWantedTiles = (camera: {
-  x: number;
-  y: number;
-  z: number;
-}): { x: number; y: number; z: number }[] => {
-  const x = Math.floor(camera.x),
-    y = Math.floor(camera.y),
-    z = camera.z;
-  const visibleTiles = [];
-  // produce a grid of 9 tiles with the center containing the camera's position
-  for (let i = Math.max(x - 1, 0); i < Math.min(x + 2, 2 ** z); i++) {
-    for (let j = Math.max(y - 1, 0); j < Math.min(y + 2, 2 ** z); j++) {
-      visibleTiles.push({ x: i, y: j, z });
+const calculateWantedTiles = (
+  camera: {
+    x: number;
+    y: number;
+    z: number;
+  },
+  options?: { expanded?: boolean },
+): { x: number; y: number; z: number }[] => {
+  if (options?.expanded) {
+    const x = Math.floor(camera.x),
+      y = Math.floor(camera.y),
+      z = camera.z;
+    const visibleTiles = [];
+    // produce a grid of 9 tiles with the center containing the camera's position
+    for (let i = Math.max(x - 1, 0); i < Math.min(x + 2, 2 ** z); i++) {
+      for (let j = Math.max(y - 1, 0); j < Math.min(y + 2, 2 ** z); j++) {
+        visibleTiles.push({ x: i, y: j, z });
+      }
     }
+    return visibleTiles;
   }
-  return visibleTiles;
+
+  const x = Math.round(camera.x),
+    y = Math.round(camera.y),
+    z = camera.z;
+  return [
+    { x, y, z },
+    { x: x - 1, y, z },
+    { x, y: y - 1, z },
+    { x: x - 1, y: y - 1, z },
+  ];
 };
 
 const calculateTransformForTile = ({

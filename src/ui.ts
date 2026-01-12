@@ -3,8 +3,12 @@ import type { Camera, UI } from "./types.js";
 export const ui = (): UI => {
   let lastTap: PointerEvent | null = null;
   let doubleTap: PointerEvent | null = null;
+  let pointersDown = 0;
 
   return {
+    get interacting() {
+      return pointersDown > 0;
+    },
     init({ camera, svg }: { camera: Camera; svg: SVGSVGElement }): void {
       new ResizeObserver(([entry]) => {
         if (!entry?.borderBoxSize[0]) return;
@@ -33,6 +37,7 @@ export const ui = (): UI => {
 
       svg.addEventListener("pointerdown", (event) => {
         svg.setPointerCapture(event.pointerId);
+        pointersDown++;
 
         // track double tap
         if (
@@ -52,6 +57,7 @@ export const ui = (): UI => {
 
       svg.addEventListener("pointerup", (event) => {
         svg.releasePointerCapture(event.pointerId);
+        pointersDown--;
 
         // double tap to zoom
         if (

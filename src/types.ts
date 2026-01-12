@@ -117,10 +117,12 @@ export type Renderer = {
     source: Source;
     style: Style;
     svg: SVGSVGElement;
+    ui: UI;
   }): void;
 };
 
 export type UI = {
+  readonly interacting: boolean;
   init(params: { camera: Camera; svg: SVGSVGElement }): void;
 };
 
