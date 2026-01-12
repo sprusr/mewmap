@@ -10,7 +10,7 @@ type TileCoordinates = {
 
 type RenderedTile = {
   coordinates: TileCoordinates;
-  element: SVGElement;
+  layerElements: Record<string, SVGElement>;
 };
 
 export const renderer = (): Renderer => {
@@ -51,19 +51,30 @@ export const renderer = (): Renderer => {
     init({ camera, source, style, svg, ui }) {
       svg.style.background = style.background ?? "none";
 
+      for (const layer of style.layers) {
+        const element = document.createElementNS(
+          "http://www.w3.org/2000/svg",
+          "g",
+        );
+        element.setAttribute("id", `layer-${layer.name}`);
+        svg.appendChild(element);
+      }
+
       const render = async () => {
         for (const {
           coordinates: { x, y, z },
-          element,
+          layerElements,
         } of visibleTiles) {
           const transform = calculateTransformForTile({
             camera,
             tile: { x, y, z },
           });
-          element.setAttribute(
-            "transform",
-            `translate(${transform.x}, ${transform.y}) scale(${transform.scale})`,
-          );
+          for (const element of Object.values(layerElements)) {
+            element.setAttribute(
+              "transform",
+              `translate(${transform.x}, ${transform.y}) scale(${transform.scale})`,
+            );
+          }
         }
 
         requestAnimationFrame(render);
@@ -82,8 +93,6 @@ export const renderer = (): Renderer => {
         });
         const { added, removed } = updateWantedTiles(wantedTiles);
 
-        const addedElements = [];
-
         for (const { x, y, z } of added) {
           const tile = await renderTileCached({
             tile: { x, y, z },
@@ -97,22 +106,31 @@ export const renderer = (): Renderer => {
             tile: { x, y, z },
           });
 
-          tile.element.setAttribute(
-            "transform",
-            `translate(${transform.x}, ${transform.y}) scale(${transform.scale})`,
-          );
-          tile.element.setAttribute("id", `tile-${x}-${y}-${z}`);
+          for (const [layerName, layerElement] of Object.entries(
+            tile.layerElements,
+          )) {
+            layerElement.setAttribute(
+              "transform",
+              `translate(${transform.x}, ${transform.y}) scale(${transform.scale})`,
+            );
+            layerElement.setAttribute(
+              "id",
+              `layer-${layerName}-tile-${x}-${y}-${z}`,
+            );
+            document
+              .getElementById(`layer-${layerName}`)
+              ?.appendChild(layerElement);
+          }
 
           visibleTiles.add(tile);
-          addedElements.push(tile.element);
         }
-
-        svg.append(...addedElements);
 
         for (const { x, y, z } of removed) {
           const tile = tileCache.get(`${x}-${y}-${z}`);
           if (tile) {
-            tile.element.remove();
+            for (const element of Object.values(tile.layerElements)) {
+              element.remove();
+            }
             visibleTiles.delete(tile);
           }
         }
@@ -204,16 +222,18 @@ const renderTileCached = async ({
   const preparedTile = style.prepare({ ...tile, x, y, z });
   const renderedTile = {
     coordinates: { x, y, z },
-    element: renderTile(preparedTile),
+    layerElements: renderTile(preparedTile),
   };
   cache.set(`${x}-${y}-${z}`, renderedTile);
   return renderedTile;
 };
 
-const renderTile = (tile: PreparedTile): SVGElement => {
-  const element = document.createElementNS("http://www.w3.org/2000/svg", "g");
+const renderTile = (tile: PreparedTile): Record<string, SVGElement> => {
+  const layerElements: Record<string, SVGElement> = {};
 
   for (const layer of Object.values(tile.layers)) {
+    const element = document.createElementNS("http://www.w3.org/2000/svg", "g");
+
     for (const feature of layer.features) {
       const path = document.createElementNS(
         "http://www.w3.org/2000/svg",
@@ -250,7 +270,9 @@ const renderTile = (tile: PreparedTile): SVGElement => {
       path.setAttribute("opacity", feature.static.opacity?.toString() ?? "1");
       element.appendChild(path);
     }
+
+    layerElements[layer.name] = element;
   }
 
-  return element;
+  return layerElements;
 };

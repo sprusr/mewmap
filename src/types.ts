@@ -108,6 +108,7 @@ export type PreparedTile = {
 
 export type Style = {
   readonly background: string | null;
+  readonly layers: { name: string }[];
   prepare(tile: Tile & { x: number; y: number; z: number }): PreparedTile;
 };
 
