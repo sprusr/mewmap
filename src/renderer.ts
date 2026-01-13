@@ -72,7 +72,7 @@ export const renderer = (): Renderer => {
 
         transformGroupElement.setAttribute(
           "transform",
-          `scale(${transform.scale}) translate(${transform.x}, ${transform.y})`,
+          `translate(${transform.x}, ${transform.y}) scale(${transform.scale})`,
         );
 
         requestAnimationFrame(render);
@@ -185,8 +185,9 @@ const calculateTransformForCamera = ({
   const n = 2 ** camera.z;
   const scale = 2 ** camera.zoom;
   return {
-    x: 0 - (VIEWBOX_SIZE / n) * camera.x + VIEWBOX_SIZE / 2 / scale,
-    y: 0 - (VIEWBOX_SIZE / n) * camera.y + VIEWBOX_SIZE / 2 / scale,
+    // TODO: doesn't work because values become too big - rebase scale for each z
+    x: 0 - (VIEWBOX_SIZE / n) * camera.x * scale + VIEWBOX_SIZE / 2,
+    y: 0 - (VIEWBOX_SIZE / n) * camera.y * scale + VIEWBOX_SIZE / 2,
     scale,
   };
 };
