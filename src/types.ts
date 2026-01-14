@@ -80,6 +80,7 @@ export type PreparedFeatureGeometry = {
 
 export type PreparedFeatureStyle = {
   fill: string | undefined;
+  fillTranslate: { x: number; y: number } | undefined;
   stroke: string | undefined;
   strokeWidth: number | undefined;
   opacity: number | undefined;
