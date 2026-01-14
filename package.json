@@ -1,7 +1,7 @@
 {
   "name": "mewmap",
   "version": "0.1.0-alpha.2",
-  "description": "SVG vector map renderer",
+  "description": "Interactive vector maps powered by SVG",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -13,8 +13,8 @@
     "prepare": "husky"
   },
   "author": "Scott Street <scott@spru.sr>",
-  "license": "ISC",
-  "homepage": "https://github.com/sprusr/mewmap#readme",
+  "license": "MIT",
+  "homepage": "https://spru.sr/mewmap",
   "bugs": {
     "url": "https://github.com/sprusr/mewmap/issues",
     "email": "scott@spru.sr"
@@ -26,6 +26,7 @@
   "keywords": [
     "map",
     "render",
+    "lightweight",
     "vector",
     "mvt",
     "svg"
