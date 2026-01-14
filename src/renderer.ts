@@ -318,7 +318,15 @@ const renderTile = (tile: PreparedTile): Record<string, SVGElement> => {
         "stroke-width",
         feature.static.strokeWidth?.toString() ?? "1",
       );
-      path.setAttribute("opacity", feature.static.opacity?.toString() ?? "1");
+      if (feature.static.opacity) {
+        path.setAttribute("opacity", feature.static.opacity?.toString() ?? "1");
+      }
+      if (feature.static.fillTranslate) {
+        path.setAttribute(
+          "transform",
+          `translate(${feature.static.fillTranslate.x} ${feature.static.fillTranslate.y})`,
+        );
+      }
       element.appendChild(path);
     }
 

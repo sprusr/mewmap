@@ -69,6 +69,7 @@ export const style = (): Style => {
             geometry,
             static: {
               fill: layer.paint["fill-color"],
+              fillTranslate: getFillTranslate(layer),
               stroke: layer.paint["line-color"],
               strokeWidth:
                 layer.paint["line-width"] !== undefined
@@ -91,6 +92,19 @@ export const style = (): Style => {
       return preparedTile;
     },
   };
+};
+
+const getFillTranslate = (
+  layer: (typeof LAYERS)[number],
+): { x: number; y: number } | undefined => {
+  if (layer.type !== "fill" || layer.paint["fill-translate"] === undefined) {
+    return undefined;
+  }
+  const [x, y] = layer.paint["fill-translate"];
+  if (x === undefined || y === undefined) {
+    return undefined;
+  }
+  return { x, y };
 };
 
 const getOpacity = (layer: (typeof LAYERS)[number], z: number): number => {
