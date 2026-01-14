@@ -1,4 +1,4 @@
-import { TILE_EXTENT, VIEWBOX_SIZE } from "./constants.js";
+import { TILE_EXTENT } from "./constants.js";
 import type { PreparedTile, Renderer, Source, Style } from "./types.js";
 import { requestIdleCallback } from "./utils.js";
 
@@ -67,13 +67,46 @@ export const renderer = (): Renderer => {
 
       svg.appendChild(transformGroupElement);
 
-      const render = async () => {
-        const transform = calculateTransformForCamera({ camera });
+      // for tracking when to recalculate tile transforms
+      let previousRoundedX: number | null = null;
+      let previousRoundedY: number | null = null;
+      let previousZ: number | null = null;
 
+      const render = async () => {
+        const cameraTransform = calculateTransformForCamera({ camera });
         transformGroupElement.setAttribute(
           "transform",
-          `translate(${transform.x}, ${transform.y}) scale(${transform.scale})`,
+          `translate(${cameraTransform.x}, ${cameraTransform.y}) scale(${cameraTransform.scale})`,
         );
+
+        const roundedX = Math.round(camera.x);
+        const roundedY = Math.round(camera.y);
+
+        if (
+          previousRoundedX !== roundedX ||
+          previousRoundedY !== roundedY ||
+          previousZ !== camera.z
+        ) {
+          for (const {
+            coordinates: { x, y, z },
+            layerElements,
+          } of visibleTiles) {
+            const tileTransform = calculateTransformForTile({
+              camera,
+              tile: { x, y, z },
+            });
+            for (const element of Object.values(layerElements)) {
+              element.setAttribute(
+                "transform",
+                `translate(${tileTransform.x}, ${tileTransform.y}) scale(${tileTransform.scale})`,
+              );
+            }
+          }
+
+          previousRoundedX = roundedX;
+          previousRoundedY = roundedY;
+          previousZ = camera.z;
+        }
 
         requestAnimationFrame(render);
       };
@@ -100,6 +133,7 @@ export const renderer = (): Renderer => {
           });
 
           const transform = calculateTransformForTile({
+            camera,
             tile: { x, y, z },
           });
 
@@ -175,33 +209,48 @@ const calculateWantedTiles = (
 const calculateTransformForCamera = ({
   camera,
 }: {
-  camera: {
-    x: number;
-    y: number;
-    z: number;
-    zoom: number;
-  };
+  camera: { x: number; y: number; z: number; zoom: number };
 }) => {
-  const n = 2 ** camera.z;
-  const scale = 2 ** camera.zoom;
+  const scale = 2 ** (camera.zoom - camera.z);
   return {
-    // TODO: doesn't work because values become too big - rebase scale for each z
-    x: 0 - (VIEWBOX_SIZE / n) * camera.x * scale + VIEWBOX_SIZE / 2,
-    y: 0 - (VIEWBOX_SIZE / n) * camera.y * scale + VIEWBOX_SIZE / 2,
+    x:
+      0 -
+      (camera.x - Math.round(camera.x)) * TILE_EXTENT * scale +
+      0.5 * TILE_EXTENT,
+    y:
+      0 -
+      (camera.y - Math.round(camera.y)) * TILE_EXTENT * scale +
+      0.5 * TILE_EXTENT,
     scale,
   };
 };
 
 const calculateTransformForTile = ({
+  camera,
   tile,
 }: {
+  camera: {
+    longitude: number;
+    latitude: number;
+    zoom: number;
+    z: number;
+    coordinatesToTile: (coordinates: {
+      longitude: number;
+      latitude: number;
+      z: number;
+    }) => { x: number; y: number };
+  };
   tile: { x: number; y: number; z: number };
 }) => {
-  const n = 2 ** tile.z;
+  const { x: cameraX, y: cameraY } = camera.coordinatesToTile({
+    ...camera,
+    ...tile,
+  });
+  const scale = 2 ** (camera.z - tile.z);
   return {
-    x: (VIEWBOX_SIZE / n) * tile.x,
-    y: (VIEWBOX_SIZE / n) * tile.y,
-    scale: VIEWBOX_SIZE / TILE_EXTENT / n,
+    x: (tile.x * scale - Math.round(cameraX * scale)) * TILE_EXTENT,
+    y: (tile.y * scale - Math.round(cameraY * scale)) * TILE_EXTENT,
+    scale,
   };
 };
 
