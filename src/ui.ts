@@ -5,37 +5,35 @@ export const ui = (): UI => {
   let doubleTap: PointerEvent | null = null;
   let pointersDown = 0;
 
+  let deinit: (() => void) | null = null;
+
   return {
     get interacting() {
       return pointersDown > 0;
     },
     init({ camera, svg }: { camera: Camera; svg: SVGSVGElement }): void {
-      new ResizeObserver(([entry]) => {
+      const resizeObserver = new ResizeObserver(([entry]) => {
         if (!entry?.borderBoxSize[0]) return;
         camera.resize({
           width: entry.borderBoxSize[0].inlineSize,
           height: entry.borderBoxSize[0].blockSize,
         });
         svg.setAttribute("viewBox", viewBoxForSvg(camera.viewBox));
-      }).observe(svg);
+      });
+      resizeObserver.observe(svg);
 
-      // prevent touch events
-      svg.addEventListener(
-        "touchstart",
-        (event) => {
-          event.preventDefault();
-        },
-        { passive: false },
-      );
-      svg.addEventListener(
-        "touchmove",
-        (event) => {
-          event.preventDefault();
-        },
-        { passive: false },
-      );
+      // prevent touch events - instead of touch-action: none as this causes
+      // performance issues with complex SVGs
+      const touchStart = (event: TouchEvent) => {
+        event.preventDefault();
+      };
+      svg.addEventListener("touchstart", touchStart, { passive: false });
+      const touchMove = (event: TouchEvent) => {
+        event.preventDefault();
+      };
+      svg.addEventListener("touchmove", touchMove, { passive: false });
 
-      svg.addEventListener("pointerdown", (event) => {
+      const pointerDown = (event: PointerEvent) => {
         svg.setPointerCapture(event.pointerId);
         pointersDown++;
 
@@ -53,9 +51,10 @@ export const ui = (): UI => {
         } else {
           lastTap = event;
         }
-      });
+      };
+      svg.addEventListener("pointerdown", pointerDown);
 
-      svg.addEventListener("pointerup", (event) => {
+      const pointerUp = (event: PointerEvent) => {
         svg.releasePointerCapture(event.pointerId);
         pointersDown--;
 
@@ -72,9 +71,10 @@ export const ui = (): UI => {
         }
 
         doubleTap = null;
-      });
+      };
+      svg.addEventListener("pointerup", pointerUp);
 
-      svg.addEventListener("pointermove", (event) => {
+      const pointerMove = (event: PointerEvent) => {
         if (event.buttons === 0) return;
 
         // double tap + drag to zoom
@@ -98,19 +98,34 @@ export const ui = (): UI => {
           });
           return camera.move({ longitude, latitude });
         }
-      });
+      };
+      svg.addEventListener("pointermove", pointerMove);
 
-      svg.addEventListener(
-        "wheel",
-        (event) => {
-          // ctrl/cmd + wheel to zoom
-          if (event.ctrlKey || event.metaKey) {
-            event.preventDefault();
-            camera.move({ zoom: camera.zoom - event.deltaY / 500 });
-          }
-        },
-        { passive: false },
-      );
+      const wheel = (event: WheelEvent) => {
+        // ctrl/cmd + wheel to zoom
+        if (event.ctrlKey || event.metaKey) {
+          event.preventDefault();
+          camera.move({ zoom: camera.zoom - event.deltaY / 500 });
+        }
+      };
+      svg.addEventListener("wheel", wheel, { passive: false });
+
+      deinit = () => {
+        resizeObserver.disconnect();
+        svg.removeEventListener("touchstart", touchStart);
+        svg.removeEventListener("touchmove", touchMove);
+        svg.removeEventListener("pointerdown", pointerDown);
+        svg.removeEventListener("pointerup", pointerUp);
+        svg.removeEventListener("pointermove", pointerMove);
+        svg.removeEventListener("wheel", wheel);
+      };
+    },
+    destroy() {
+      deinit?.();
+      deinit = null;
+      lastTap = null;
+      doubleTap = null;
+      pointersDown = 0;
     },
   };
 };

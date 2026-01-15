@@ -11,3 +11,6 @@ export const MIN_TILE_Z = 0;
 export const MAX_TILE_Z = 14;
 
 export const MAX_ZOOM = 20;
+
+export const DEFAULT_STYLE_URL =
+  "https://tiles.versatiles.org/assets/styles/colorful/style.json";

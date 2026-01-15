@@ -1,4 +1,6 @@
+import type * as z from "zod/mini";
 import type { Tile as VectorTile } from "./gen/vector_tile_pb.js";
+import type { style as styleSchema } from "./style/schema.js";
 
 export type CameraOptions = {
   longitude?: number;
@@ -139,18 +141,20 @@ export type Renderer = {
     svg: SVGSVGElement;
     ui: UI;
   }): void;
+  destroy(): void;
 };
 
 export type UI = {
   readonly interacting: boolean;
   init(params: { camera: Camera; svg: SVGSVGElement }): void;
+  destroy(): void;
 };
 
 export type MewMapOptions = {
   longitude?: number;
   latitude?: number;
   zoom?: number;
-  style?: string;
+  style?: string | z.input<typeof styleSchema>;
   svg: Element | null;
 };
 
