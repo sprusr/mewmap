@@ -1,4 +1,4 @@
-import type { Tile } from "./gen/vector_tile_pb.js";
+import type { Tile as VectorTile } from "./gen/vector_tile_pb.js";
 
 export type CameraOptions = {
   longitude?: number;
@@ -63,8 +63,25 @@ export type Camera = {
   };
 };
 
+export type Tile =
+  | ({ type: "vector" } & VectorTile)
+  | { type: "raster"; url: string };
+
 export type Source = {
-  fetch(x: number, y: number, z: number): Promise<Tile>;
+  /**
+   * Identifying name of the source, or null indicates this source does not
+   * provide tiles of its own (e.g. a composite source).
+   */
+  readonly name: string | null;
+  fetch(params: {
+    /**
+     * Name of the source from which to fetch the tile. Compared against
+     * source's own name, or used to determine which other source to used in the
+     * case of e.g. a composite source.
+     */
+    name: string;
+    tile: { x: number; y: number; z: number };
+  }): Promise<Tile | null>;
 };
 
 type PreparedFeatureGeometryCommand =
@@ -78,6 +95,7 @@ export type PreparedFeatureGeometry = {
   commands: Array<PreparedFeatureGeometryCommand>;
 };
 
+// TODO: replace with same shape from style layer schema, but resolved
 export type PreparedFeatureStyle = {
   fill: string | undefined;
   fillTranslate: { x: number; y: number } | undefined;
@@ -110,7 +128,7 @@ export type PreparedTile = {
 export type Style = {
   readonly background: string | null;
   readonly layers: { name: string }[];
-  prepare(tile: Tile & { x: number; y: number; z: number }): PreparedTile;
+  prepare(tile: VectorTile & { x: number; y: number; z: number }): PreparedTile;
 };
 
 export type Renderer = {
@@ -132,6 +150,7 @@ export type MewMapOptions = {
   longitude?: number;
   latitude?: number;
   zoom?: number;
+  style?: string;
   svg: Element | null;
 };
 
@@ -142,6 +161,11 @@ export type MewMap = {
   readonly svg: SVGSVGElement;
   readonly renderer: Renderer;
   readonly ui: UI;
+  /**
+   * Promise which resolves when the map has finished loading. A resolved value
+   * of false indicates that there was an error loading the map.
+   */
+  readonly loaded: Promise<boolean>;
   move(position: {
     longitude?: number;
     latitude?: number;

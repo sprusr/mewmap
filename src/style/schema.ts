@@ -1,6 +1,8 @@
 import * as z from "zod/mini";
 
-export const fn = z.unknown();
+export const fn = z.union([
+  z.object({ stops: z.array(z.tuple([z.number(), z.number()])) }),
+]);
 
 export const filter = z.unknown();
 
@@ -73,6 +75,7 @@ export const geojsonSource = z.object({
   minzoom: z.optional(z.number()),
   promoteId: z.optional(z.unknown()),
   tolerance: z.optional(z.number()),
+  type: z.literal("geojson"),
 });
 
 export const source = z.discriminatedUnion("type", [
@@ -272,6 +275,12 @@ export const layer = z.discriminatedUnion("type", [
   symbolLayer,
 ]);
 
+/**
+ * Still need to:
+ * - Make every layer paint and layout property union with function and expression
+ * - Add proper schema for functions, filters and expressions
+ * - Add missing layer/source types
+ */
 export const style = z.object({
   version: z.literal(8),
   name: z.string(),

@@ -1,26 +1,20 @@
+import type * as z from "zod/mini";
 import { TILE_EXTENT } from "../constants.js";
 import { decodeGeometry } from "../mvt.js";
-import type { PreparedTile, Style } from "../types.js";
-import { LAYERS } from "./constants.js";
+import type { PreparedFeature, PreparedTile, Style } from "../types.js";
 import { evaluate } from "./expression/index.js";
 import { stops } from "./expression/utils.js";
-import { style as styleSchema } from "./schema.js";
+import type * as schema from "./schema.js";
 
-export const style = (): Style => {
-  console.log(
-    styleSchema.shape.layers.safeParse(LAYERS).success
-      ? "Style is valid"
-      : "Style is not valid",
-  );
-
+export const style = (spec: z.input<typeof schema.style>): Style => {
   return {
     background:
-      LAYERS.find((layer) => layer.type === "background")?.paint[
+      spec.layers.find((layer) => layer.type === "background")?.paint?.[
         "background-color"
       ] ?? null,
-    layers: LAYERS.map((layer) => ({ name: layer.id })),
+    layers: spec.layers.map((layer) => ({ name: layer.id })),
     prepare(tile) {
-      const filteredLayers = LAYERS.filter(
+      const filteredLayers = spec.layers.filter(
         (layer) =>
           (layer.minzoom === undefined || layer.minzoom <= tile.z) &&
           layer.type !== "background",
@@ -75,19 +69,13 @@ export const style = (): Style => {
           const feature = {
             geometry,
             static: {
-              fill: layer.paint["fill-color"],
+              fill: getFill(layer),
               fillTranslate: getFillTranslate(layer),
-              stroke: layer.paint["line-color"],
-              strokeWidth:
-                layer.paint["line-width"] !== undefined
-                  ? stops(
-                      tile.z,
-                      layer.paint["line-width"].stops as [number, number][],
-                    )
-                  : undefined,
+              stroke: getStroke(layer),
+              strokeWidth: getStrokeWidth(layer, tile.z),
               opacity: getOpacity(layer, tile.z),
             },
-          };
+          } satisfies PreparedFeature;
 
           preparedTile.layers[layer.id] = {
             name: layer.id,
@@ -101,10 +89,17 @@ export const style = (): Style => {
   };
 };
 
+const getFill = (layer: z.input<typeof schema.layer>): string | undefined => {
+  if (layer.type !== "fill" || layer.paint?.["fill-color"] === undefined) {
+    return undefined;
+  }
+  return layer.paint["fill-color"];
+};
+
 const getFillTranslate = (
-  layer: (typeof LAYERS)[number],
+  layer: z.input<typeof schema.layer>,
 ): { x: number; y: number } | undefined => {
-  if (layer.type !== "fill" || layer.paint["fill-translate"] === undefined) {
+  if (layer.type !== "fill" || layer.paint?.["fill-translate"] === undefined) {
     return undefined;
   }
   const [x, y] = layer.paint["fill-translate"];
@@ -114,19 +109,42 @@ const getFillTranslate = (
   return { x, y };
 };
 
-const getOpacity = (layer: (typeof LAYERS)[number], z: number): number => {
+const getStroke = (layer: z.input<typeof schema.layer>): string | undefined => {
+  if (layer.type !== "line" || layer.paint?.["line-color"] === undefined) {
+    return undefined;
+  }
+  return layer.paint["line-color"];
+};
+
+const getStrokeWidth = (
+  layer: z.input<typeof schema.layer>,
+  z: number,
+): number | undefined => {
+  if (layer.type !== "line" || layer.paint?.["line-width"] === undefined) {
+    return undefined;
+  }
+  if (typeof layer.paint["line-width"] === "number") {
+    return layer.paint["line-width"];
+  }
+  if ("stops" in layer.paint["line-width"]) {
+    return stops(z, layer.paint?.["line-width"].stops);
+  }
+  return undefined;
+};
+
+const getOpacity = (layer: z.input<typeof schema.layer>, z: number): number => {
   if (layer.type === "fill") {
-    return layer.paint["fill-opacity"] !== undefined
-      ? typeof layer.paint["fill-opacity"] !== "number"
-        ? stops(z, layer.paint["fill-opacity"].stops as [number, number][])
-        : layer.paint["fill-opacity"]
-      : 1;
+    if (layer.paint?.["fill-opacity"] === undefined) return 1;
+    if (typeof layer.paint["fill-opacity"] === "number")
+      return layer.paint["fill-opacity"];
+    if ("stops" in layer.paint["fill-opacity"])
+      return stops(z, layer.paint?.["fill-opacity"].stops);
   } else if (layer.type === "line") {
-    return layer.paint["line-opacity"] !== undefined
-      ? typeof layer.paint["line-opacity"] !== "number"
-        ? stops(z, layer.paint["line-opacity"].stops as [number, number][])
-        : layer.paint["line-opacity"]
-      : 1;
+    if (layer.paint?.["line-opacity"] === undefined) return 1;
+    if (typeof layer.paint["line-opacity"] === "number")
+      return layer.paint["line-opacity"];
+    if ("stops" in layer.paint["line-opacity"])
+      return stops(z, layer.paint?.["line-opacity"].stops);
   }
   return 1;
 };

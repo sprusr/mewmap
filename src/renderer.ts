@@ -14,7 +14,10 @@ type RenderedTile = {
 };
 
 export const renderer = (): Renderer => {
-  const tileCache = new Map<`${number}-${number}-${number}`, RenderedTile>();
+  const tileCache = new Map<
+    `${number}-${number}-${number}`,
+    RenderedTile | null
+  >();
   const visibleTiles = new Set<RenderedTile>();
 
   let wantedTiles: TileCoordinates[] = [];
@@ -131,6 +134,10 @@ export const renderer = (): Renderer => {
             source,
             style,
           });
+
+          if (!tile) {
+            continue;
+          }
 
           const transform = calculateTransformForTile({
             camera,
@@ -263,13 +270,20 @@ const renderTileCached = async ({
   tile: { x: number; y: number; z: number };
   source: Source;
   style: Style;
-  cache: Map<string, RenderedTile>;
-}): Promise<RenderedTile> => {
+  cache: Map<string, RenderedTile | null>;
+}): Promise<RenderedTile | null> => {
   const cached = cache.get(`${x}-${y}-${z}`);
-  if (cached) {
+  if (cached !== undefined) {
     return cached;
   }
-  const tile = await source.fetch(x, y, z);
+  const tile = await source.fetch({
+    name: "versatiles-shortbread",
+    tile: { x, y, z },
+  });
+  if (!tile || tile.type === "raster") {
+    cache.set(`${x}-${y}-${z}`, null);
+    return null;
+  }
   const preparedTile = style.prepare({ ...tile, x, y, z });
   const renderedTile = {
     coordinates: { x, y, z },
