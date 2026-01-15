@@ -4,8 +4,15 @@ import type { PreparedTile, Style } from "../types.js";
 import { LAYERS } from "./constants.js";
 import { evaluate } from "./expression/index.js";
 import { stops } from "./expression/utils.js";
+import { style as styleSchema } from "./schema.js";
 
 export const style = (): Style => {
+  console.log(
+    styleSchema.shape.layers.safeParse(LAYERS).success
+      ? "Style is valid"
+      : "Style is not valid",
+  );
+
   return {
     background:
       LAYERS.find((layer) => layer.type === "background")?.paint[
