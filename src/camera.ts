@@ -42,7 +42,7 @@ export const camera = (options: CameraOptions): Camera => {
     move(position) {
       longitude = position.longitude ?? longitude;
       latitude = position.latitude ?? latitude;
-      zoom = Math.min(MAX_ZOOM, position.zoom ?? zoom);
+      zoom = Math.max(Math.min(MAX_ZOOM, position.zoom ?? zoom), 0);
       z = Math.round(Math.min(MAX_TILE_Z, Math.max(MIN_TILE_Z, zoom)));
       ({ x, y } = coordinatesToTile({ longitude, latitude, z }));
     },
