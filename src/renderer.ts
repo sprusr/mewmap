@@ -50,11 +50,16 @@ export const renderer = (): Renderer => {
     return { added, removed };
   };
 
+  let animating = false;
+  let transformGroupElement: SVGElement | null = null;
+
   return {
     init({ camera, source, style, svg, ui }) {
+      animating = true;
+
       svg.style.background = style.background ?? "none";
 
-      const transformGroupElement = document.createElementNS(
+      transformGroupElement = document.createElementNS(
         "http://www.w3.org/2000/svg",
         "g",
       );
@@ -76,8 +81,10 @@ export const renderer = (): Renderer => {
       let previousZ: number | null = null;
 
       const render = async () => {
+        if (!animating) return;
+
         const cameraTransform = calculateTransformForCamera({ camera });
-        transformGroupElement.setAttribute(
+        transformGroupElement?.setAttribute(
           "transform",
           `translate(${cameraTransform.x}, ${cameraTransform.y}) scale(${cameraTransform.scale})`,
         );
@@ -116,6 +123,8 @@ export const renderer = (): Renderer => {
       requestAnimationFrame(render);
 
       const idle = async () => {
+        if (!animating) return;
+
         // proper idle scheduling not possible, wait until user stops interacting
         if (globalThis.requestIdleCallback === undefined && ui.interacting) {
           requestIdleCallback(idle);
@@ -176,6 +185,13 @@ export const renderer = (): Renderer => {
         requestIdleCallback(idle);
       };
       requestIdleCallback(idle);
+    },
+    destroy() {
+      animating = false;
+      tileCache.clear();
+      visibleTiles.clear();
+      wantedTiles = [];
+      transformGroupElement?.remove();
     },
   };
 };
