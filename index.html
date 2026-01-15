@@ -2,7 +2,10 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, maximum-scale=1"
+    />
     <title>mewmap</title>
     <style>
       body {
@@ -10,6 +13,23 @@
         display: grid;
         grid-template-columns: 100dvw;
         grid-template-rows: 100dvh;
+        font-family: system-ui, sans-serif;
+      }
+      .info {
+        margin-block-end: 4px;
+      }
+      .info h1 {
+        margin: 0;
+        display: inline;
+        font-size: 16pt;
+      }
+      .info p {
+        margin: 0;
+        display: inline;
+      }
+      .info a {
+        text-decoration: none;
+        color: inherit;
       }
       .map {
         grid-area: 1 / 1 / 1 / 1;
@@ -41,6 +61,10 @@
   <body>
     <svg class="map" id="mewmap"></svg>
     <div class="controls">
+      <div class="info">
+        <h1>mewmap</h1>
+        <p><a href="https://github.com/sprusr/mewmap">GitHub</a></p>
+      </div>
       <form id="search">
         <input id="query" type="text" placeholder="Location" />
         <input type="submit" value="Go" />
