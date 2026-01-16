@@ -1,7 +1,9 @@
 import { camera } from "./camera.js";
 import { DEFAULT_STYLE_URL } from "./constants.js";
 import { renderer } from "./renderer.js";
+import { composite } from "./source/composite.js";
 import { dummy as dummySource } from "./source/dummy.js";
+import { raster } from "./source/raster.js";
 import { vector } from "./source/vector.js";
 import { dummy as dummyStyle } from "./style/dummy.js";
 import { style } from "./style/index.js";
@@ -39,11 +41,28 @@ export const mewmap = (options: MewMapOptions): MewMap => {
       const json = await response.json();
       const parsed = styleSchema.parse(json);
 
+      // add satellite layer, remove vector layers which would look bad with it
+      parsed.layers.splice(1, 0, {
+        id: "orthophotos",
+        type: "raster",
+        source: "orthophotos",
+      });
+      parsed.layers = parsed.layers.filter(
+        (l) =>
+          l.type !== "fill" && !/^(land|water|site|airport|tunnel)-/.test(l.id),
+      );
+
       map.style = style(parsed);
-      map.source = vector({ name: "versatiles-shortbread" });
+      map.source = composite(
+        vector({ name: "versatiles-shortbread" }),
+        raster({ name: "orthophotos" }),
+      );
     } else {
       map.style = style(options.style);
-      map.source = vector({ name: "versatiles-shortbread" });
+      map.source = composite(
+        vector({ name: "versatiles-shortbread" }),
+        raster({ name: "orthophotos" }),
+      );
     }
 
     map.renderer.init(map);

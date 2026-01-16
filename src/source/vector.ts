@@ -1,6 +1,6 @@
 import { fromBinary } from "@bufbuild/protobuf";
-import { type Tile, TileSchema } from "../gen/vector_tile_pb.js";
-import type { Source } from "../types.js";
+import { TileSchema } from "../gen/vector_tile_pb.js";
+import type { Source, Tile } from "../types.js";
 
 const TILES_URL = "https://tiles.versatiles.org/tiles/osm/{z}/{x}/{y}";
 
@@ -20,12 +20,9 @@ const parseTile = (bytes: Uint8Array) => {
 };
 
 export const vector = ({ name: sourceName }: { name: string }): Source => {
-  const tileCache = new Map<string, { type: "vector" } & Tile>();
+  const tileCache = new Map<string, Extract<Tile, { type: "vector" }>>();
 
   return {
-    get name() {
-      return sourceName;
-    },
     async fetch({ name, tile: { x, y, z } }) {
       if (name !== sourceName) return null;
 
@@ -33,7 +30,7 @@ export const vector = ({ name: sourceName }: { name: string }): Source => {
       if (cached) return cached;
 
       const bytes = await fetchTile(TILES_URL, x, y, z);
-      const tile = { type: "vector" as const, ...parseTile(bytes) };
+      const tile = { type: "vector" as const, ...parseTile(bytes), x, y, z };
 
       tileCache.set(`${x}-${y}-${z}`, tile);
 

@@ -70,15 +70,10 @@ export type Tile =
   | { type: "raster"; url: string };
 
 export type Source = {
-  /**
-   * Identifying name of the source, or null indicates this source does not
-   * provide tiles of its own (e.g. a composite source).
-   */
-  readonly name: string | null;
   fetch(params: {
     /**
      * Name of the source from which to fetch the tile. Compared against
-     * source's own name, or used to determine which other source to used in the
+     * source's own name, or used to determine which other source to use in the
      * case of e.g. a composite source.
      */
     name: string;
@@ -118,10 +113,17 @@ export type PreparedFeature = {
   }) => Partial<PreparedFeatureStyle>;
 };
 
-export type PreparedLayer = {
-  name: string;
-  features: Array<PreparedFeature>;
-};
+export type PreparedLayer =
+  | {
+      type: "vector";
+      name: string;
+      features: Array<PreparedFeature>;
+    }
+  | {
+      type: "raster";
+      name: string;
+      url: string;
+    };
 
 export type PreparedTile = {
   layers: Record<string, PreparedLayer>;
@@ -130,7 +132,10 @@ export type PreparedTile = {
 export type Style = {
   readonly background: string | null;
   readonly layers: { name: string }[];
-  prepare(tile: VectorTile & { x: number; y: number; z: number }): PreparedTile;
+  prepare(params: {
+    source: Source;
+    tile: { x: number; y: number; z: number };
+  }): Promise<PreparedTile>;
 };
 
 export type Renderer = {
