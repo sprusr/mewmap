@@ -292,15 +292,7 @@ const renderTileCached = async ({
   if (cached !== undefined) {
     return cached;
   }
-  const tile = await source.fetch({
-    name: "versatiles-shortbread",
-    tile: { x, y, z },
-  });
-  if (!tile || tile.type === "raster") {
-    cache.set(`${x}-${y}-${z}`, null);
-    return null;
-  }
-  const preparedTile = style.prepare({ ...tile, x, y, z });
+  const preparedTile = await style.prepare({ source, tile: { x, y, z } });
   const renderedTile = {
     coordinates: { x, y, z },
     layerElements: renderTile(preparedTile),
@@ -313,6 +305,20 @@ const renderTile = (tile: PreparedTile): Record<string, SVGElement> => {
   const layerElements: Record<string, SVGElement> = {};
 
   for (const layer of Object.values(tile.layers)) {
+    if (layer.type === "raster") {
+      const image = document.createElementNS(
+        "http://www.w3.org/2000/svg",
+        "image",
+      );
+      image.setAttribute("x", "-1");
+      image.setAttribute("y", "-1");
+      image.setAttribute("width", (TILE_EXTENT + 2).toString());
+      image.setAttribute("height", (TILE_EXTENT + 2).toString());
+      image.setAttribute("href", layer.url);
+      layerElements[layer.name] = image;
+      continue;
+    }
+
     const element = document.createElementNS("http://www.w3.org/2000/svg", "g");
 
     for (const feature of layer.features) {

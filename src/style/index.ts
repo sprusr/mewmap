@@ -1,7 +1,7 @@
 import type * as z from "zod/mini";
 import { TILE_EXTENT } from "../constants.js";
 import { decodeGeometry } from "../mvt.js";
-import type { PreparedFeature, PreparedTile, Style } from "../types.js";
+import type { PreparedFeature, PreparedTile, Style, Tile } from "../types.js";
 import { evaluate } from "./expression/index.js";
 import { stops } from "./expression/utils.js";
 import type * as schema from "./schema.js";
@@ -13,7 +13,16 @@ export const style = (spec: z.input<typeof schema.style>): Style => {
         "background-color"
       ] ?? null,
     layers: spec.layers.map((layer) => ({ name: layer.id })),
-    prepare(tile) {
+    async prepare({ source, tile }) {
+      const sourceTiles = new Map<string, Tile | null>();
+      const fetchSourceTileCached = async (name: string) => {
+        const cached = sourceTiles.get(name);
+        if (cached !== undefined) return cached;
+        const sourceTile = await source.fetch({ name, tile });
+        sourceTiles.set(name, sourceTile);
+        return sourceTile;
+      };
+
       const filteredLayers = spec.layers.filter(
         (layer) =>
           (layer.minzoom === undefined || layer.minzoom <= tile.z) &&
@@ -24,7 +33,10 @@ export const style = (spec: z.input<typeof schema.style>): Style => {
 
       for (const layer of filteredLayers) {
         if (layer.type === "fill" || layer.type === "line") {
-          const tileLayer = tile.layers.find(
+          const sourceTile = await fetchSourceTileCached(layer.source);
+          if (!sourceTile || sourceTile.type !== "vector") continue;
+
+          const tileLayer = sourceTile.layers.find(
             (tileLayer) => tileLayer.name === layer["source-layer"],
           );
           if (!tileLayer) continue;
@@ -78,8 +90,18 @@ export const style = (spec: z.input<typeof schema.style>): Style => {
           } satisfies PreparedFeature;
 
           preparedTile.layers[layer.id] = {
+            type: "vector",
             name: layer.id,
             features: [feature],
+          };
+        } else if (layer.type === "raster") {
+          const sourceTile = await fetchSourceTileCached(layer.source);
+          if (!sourceTile || sourceTile.type !== "raster") continue;
+
+          preparedTile.layers[layer.id] = {
+            type: "raster",
+            name: layer.id,
+            url: sourceTile.url,
           };
         }
       }

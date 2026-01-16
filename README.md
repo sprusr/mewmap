@@ -32,8 +32,8 @@ If you're looking to have a map on your website, with maybe a few markers and ab
 The aim is to cover most common use cases of a map on a website.
 
 - [x] Functional rendering with reference map style (VersaTiles colorful; excluding symbols)
+- [x] Raster sources/layers (satellite)
 - [ ] Symbols rendering (text and icons)
-- [ ] Raster sources/layers (satellite)
 - [ ] GeoJSON sources (markers, external data)
 - [ ] More comprehensive Maplibe/Mapbox style spec support
 - [ ] Server rendering
