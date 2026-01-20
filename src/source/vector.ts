@@ -5,18 +5,26 @@ import type { Source, Tile } from "../types.js";
 const TILES_URL = "https://tiles.versatiles.org/tiles/osm/{z}/{x}/{y}";
 
 const fetchTile = async (tilesUrl: string, x: number, y: number, z: number) => {
-  const url = tilesUrl
-    .replace("{x}", x.toString())
-    .replace("{y}", y.toString())
-    .replace("{z}", z.toString());
-  const response = await fetch(url);
-  const bytes = await response.bytes();
-  return bytes;
+  try {
+    const url = tilesUrl
+      .replace("{x}", x.toString())
+      .replace("{y}", y.toString())
+      .replace("{z}", z.toString());
+    const response = await fetch(url);
+    const bytes = await response.bytes();
+    return bytes;
+  } catch {
+    return null;
+  }
 };
 
 const parseTile = (bytes: Uint8Array) => {
-  const tile = fromBinary(TileSchema, bytes);
-  return tile;
+  try {
+    const tile = fromBinary(TileSchema, bytes);
+    return tile;
+  } catch {
+    return null;
+  }
 };
 
 export const vector = ({ name: sourceName }: { name: string }): Source => {
@@ -30,7 +38,12 @@ export const vector = ({ name: sourceName }: { name: string }): Source => {
       if (cached) return cached;
 
       const bytes = await fetchTile(TILES_URL, x, y, z);
-      const tile = { type: "vector" as const, ...parseTile(bytes), x, y, z };
+      if (!bytes) return null;
+
+      const tileData = parseTile(bytes);
+      if (!tileData) return null;
+
+      const tile = { type: "vector" as const, ...tileData, x, y, z };
 
       tileCache.set(`${x}-${y}-${z}`, tile);
 

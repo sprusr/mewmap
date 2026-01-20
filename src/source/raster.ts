@@ -7,10 +7,12 @@ export const raster = ({ name: sourceName }: { name: string }): Source => {
         return null;
       }
 
-      // prefetch image so that it's in cache
-      await fetch(
-        `https://versatiles-satellite.b-cdn.net/tiles/orthophotos/${z}/${x}/${y}`,
-      );
+      // attempt to prefetch image so that it's in cache
+      try {
+        await fetch(
+          `https://versatiles-satellite.b-cdn.net/tiles/orthophotos/${z}/${x}/${y}`,
+        );
+      } catch {}
 
       return {
         type: "raster",
