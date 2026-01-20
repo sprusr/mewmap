@@ -1,4 +1,5 @@
 import * as z from "zod/mini";
+import { resolvedLayer, specLayer } from "./utils.js";
 
 export const fn = z.union([
   z.object({ stops: z.array(z.tuple([z.number(), z.number()])) }),
@@ -162,64 +163,59 @@ export const fillLayer = z.extend(layerBase, {
   ),
 });
 
-export const lineLayer = z.extend(layerBase, {
+export const lineLayerBase = z.extend(layerBase, {
   type: z.literal("line"),
   source: z.string(),
   "source-layer": z.optional(z.string()),
-  paint: z.optional(
-    z.partial(
-      z.object({
-        "line-blur": z.number().check(z.positive()),
-        "line-color": z.string(),
-        "line-dasharray": z.array(z.number().check(z.positive())),
-        "line-emissive-strength": z.number().check(z.positive()),
-        "line-gap-width": z.number().check(z.positive()),
-        "line-gradient": z.unknown(),
-        "line-occlusion-opacity": z.number().check(z.gte(0), z.lte(1)),
-        "line-offset": z.number(),
-        "line-opacity": z.union([
-          z.number().check(z.gte(0), z.lte(1)),
-          expression,
-          fn,
-        ]),
-        "line-pattern": z.string(),
-        "line-pattern-cross-fade": z.number().check(z.gte(0), z.lte(1)),
-        "line-translate": z.tuple([z.number(), z.number()]),
-        "line-translate-anchor": z.enum(["map", "viewport"]),
-        "line-trim-color": z.string(),
-        "line-trim-fade-range": z.tuple([
-          z.number().check(z.gte(0), z.lte(1)),
-          z.number().check(z.gte(0), z.lte(1)),
-        ]),
-        "line-trim-offset": z.tuple([
-          z.number().check(z.gte(0), z.lte(1)),
-          z.number().check(z.gte(0), z.lte(1)),
-        ]),
-        "line-width": z.union([z.number().check(z.positive()), expression, fn]),
-      }),
-    ),
-  ),
-  layout: z.optional(
-    z.partial(
-      z.object({
-        "line-cap": z.enum(["butt", "round", "square"]),
-        "line-cross-slope": z.number(),
-        "line-elevation-reference": z.enum([
-          "none",
-          "sea",
-          "ground",
-          "hd-road-markup",
-        ]),
-        "line-join": z.enum(["bevel", "round", "miter", "none"]),
-        "line-miter-limit": z.number(),
-        "line-round-limit": z.number(),
-        "line-sort-key": z.number(),
-        "line-z-offset": z.number(),
-        visibility: z.enum(["visible", "none"]),
-      }),
-    ),
-  ),
+  paint: z.object({
+    "line-blur": z.number().check(z.positive()),
+    "line-color": z.string(),
+    "line-dasharray": z.array(z.number().check(z.positive())),
+    "line-emissive-strength": z.number().check(z.positive()),
+    "line-gap-width": z.number().check(z.positive()),
+    "line-gradient": z.unknown(),
+    "line-occlusion-opacity": z.number().check(z.gte(0), z.lte(1)),
+    "line-offset": z.number(),
+    "line-opacity": z.union([
+      z.number().check(z.gte(0), z.lte(1)),
+      expression,
+      fn,
+    ]),
+    "line-pattern": z.string(),
+    "line-pattern-cross-fade": z.number().check(z.gte(0), z.lte(1)),
+    "line-translate": z.tuple([z.number(), z.number()]),
+    "line-translate-anchor": z.enum(["map", "viewport"]),
+    "line-trim-color": z.string(),
+    "line-trim-fade-range": z.tuple([
+      z.number().check(z.gte(0), z.lte(1)),
+      z.number().check(z.gte(0), z.lte(1)),
+    ]),
+    "line-trim-offset": z.tuple([
+      z.number().check(z.gte(0), z.lte(1)),
+      z.number().check(z.gte(0), z.lte(1)),
+    ]),
+    "line-width": z.union([z.number().check(z.positive()), expression, fn]),
+  }),
+  layout: z.object({
+    "line-cap": z.enum(["butt", "round", "square"]),
+    "line-cross-slope": z.number(),
+    "line-elevation-reference": z.enum([
+      "none",
+      "sea",
+      "ground",
+      "hd-road-markup",
+    ]),
+    "line-join": z.enum(["bevel", "round", "miter", "none"]),
+    "line-miter-limit": z.number(),
+    "line-round-limit": z.number(),
+    "line-sort-key": z.number(),
+    "line-z-offset": z.number(),
+    visibility: z.enum(["visible", "none"]),
+  }),
 });
+
+export const lineLayer = specLayer(lineLayerBase);
+export const lineLayerResolved = resolvedLayer(lineLayerBase);
 
 export const rasterLayer = z.extend(layerBase, {
   type: z.literal("raster"),
