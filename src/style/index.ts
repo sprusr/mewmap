@@ -132,7 +132,10 @@ const getFillTranslate = (
 };
 
 const getStroke = (layer: z.input<typeof schema.layer>): string | undefined => {
-  if (layer.type !== "line" || layer.paint?.["line-color"] === undefined) {
+  if (
+    layer.type !== "line" ||
+    typeof layer.paint?.["line-color"] !== "string"
+  ) {
     return undefined;
   }
   return layer.paint["line-color"];
