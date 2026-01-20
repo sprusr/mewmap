@@ -1,3 +1,4 @@
+import type * as z from "zod/mini";
 import { camera } from "./camera.js";
 import { DEFAULT_STYLE_URL } from "./constants.js";
 import { renderer } from "./renderer.js";
@@ -8,7 +9,7 @@ import { vector } from "./source/vector.js";
 import { dummy as dummyStyle } from "./style/dummy.js";
 import { style } from "./style/index.js";
 import { style as styleSchema } from "./style/schema.js";
-import type { MewMap, MewMapOptions } from "./types.js";
+import type { MewMap, MewMapOptions, Source } from "./types.js";
 import { ui } from "./ui.js";
 
 export const mewmap = (options: MewMapOptions): MewMap => {
@@ -36,34 +37,10 @@ export const mewmap = (options: MewMapOptions): MewMap => {
   } satisfies MewMap;
 
   const init = async (): Promise<boolean> => {
-    if (options.style === undefined || typeof options.style === "string") {
-      const response = await fetch(options.style ?? DEFAULT_STYLE_URL);
-      const json = await response.json();
-      const parsed = styleSchema.parse(json);
+    const styleSpec = await getStyleSpec(options.style);
 
-      // add satellite layer, remove vector layers which would look bad with it
-      parsed.layers.splice(1, 0, {
-        id: "orthophotos",
-        type: "raster",
-        source: "orthophotos",
-      });
-      parsed.layers = parsed.layers.filter(
-        (l) =>
-          l.type !== "fill" && !/^(land|water|site|airport|tunnel)-/.test(l.id),
-      );
-
-      map.style = style(parsed);
-      map.source = composite(
-        vector({ name: "versatiles-shortbread" }),
-        raster({ name: "orthophotos" }),
-      );
-    } else {
-      map.style = style(options.style);
-      map.source = composite(
-        vector({ name: "versatiles-shortbread" }),
-        raster({ name: "orthophotos" }),
-      );
-    }
+    map.style = style(styleSpec);
+    map.source = sourceFromStyleSpec(styleSpec);
 
     map.renderer.init(map);
     map.ui.init(map);
@@ -74,4 +51,57 @@ export const mewmap = (options: MewMapOptions): MewMap => {
   map.loaded = init();
 
   return map;
+};
+
+const getStyleSpec = async (
+  styleOption: MewMapOptions["style"],
+): Promise<z.output<typeof styleSchema>> => {
+  if (styleOption === undefined || typeof styleOption === "string") {
+    const response = await fetch(styleOption ?? DEFAULT_STYLE_URL);
+    const json = await response.json();
+    const parsed = styleSchema.parse(json);
+
+    // add satellite layer, remove vector layers which would look bad with it
+    parsed.layers.splice(1, 0, {
+      id: "orthophotos",
+      type: "raster",
+      source: "orthophotos",
+    });
+    parsed.layers = parsed.layers.filter(
+      (l) =>
+        l.type !== "fill" && !/^(land|water|site|airport|tunnel)-/.test(l.id),
+    );
+    parsed.sources["orthophotos"] = {
+      type: "raster",
+      tiles: [
+        "https://versatiles-satellite.b-cdn.net/tiles/orthophotos/{z}/{x}/{y}",
+      ],
+      tileSize: 512,
+      attribution: "© VersaTiles",
+      maxzoom: 17,
+    };
+
+    return parsed;
+  }
+  return styleSchema.parse(styleOption);
+};
+
+const sourceFromStyleSpec = (
+  styleSpec: z.output<typeof styleSchema>,
+): Source => {
+  const sources = Object.entries(styleSpec.sources).map(([name, source]) => {
+    if (source.type === "vector") {
+      return vector({ name });
+    } else if (source.type === "raster") {
+      return raster({ name });
+    }
+    return dummySource();
+  });
+  if (sources.length === 0) {
+    return dummySource();
+  }
+  if (sources.length === 1 && sources[0]) {
+    return sources[0];
+  }
+  return composite(...sources);
 };
