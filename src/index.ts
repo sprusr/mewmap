@@ -1,7 +1,7 @@
 import type * as z from "zod/mini";
 import { camera } from "./camera.js";
 import { DEFAULT_STYLE_URL } from "./constants.js";
-import { renderer } from "./renderer.js";
+import { renderer } from "./renderer/index.js";
 import { composite } from "./source/composite.js";
 import { dummy as dummySource } from "./source/dummy.js";
 import { raster } from "./source/raster.js";

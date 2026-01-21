@@ -1,5 +1,5 @@
 import * as z from "zod/mini";
-import { expression, fn } from "./schema.js";
+import { expression, fn } from "../schema.js";
 
 type ResolvedType<T> =
   | {

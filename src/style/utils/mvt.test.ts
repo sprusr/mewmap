@@ -1,6 +1,6 @@
 import { create } from "@bufbuild/protobuf";
 import { describe, expect, it } from "vitest";
-import { Tile_FeatureSchema } from "./gen/vector_tile_pb";
+import { Tile_FeatureSchema } from "../../gen/vector_tile_pb";
 import { decodeGeometry } from "./mvt";
 
 describe("mvt parser", () => {
