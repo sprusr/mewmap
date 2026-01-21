@@ -1,5 +1,5 @@
-import { type Tile_Feature, Tile_GeomType } from "./gen/vector_tile_pb.js";
-import type { PreparedFeatureGeometry } from "./types.js";
+import { type Tile_Feature, Tile_GeomType } from "../../gen/vector_tile_pb.js";
+import type { PreparedFeatureGeometry } from "../../types.js";
 
 type Command = {
   nextAt: number | null;

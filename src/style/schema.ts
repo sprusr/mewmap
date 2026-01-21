@@ -1,5 +1,5 @@
 import * as z from "zod/mini";
-import { layerProperties, type ResolvedLayer } from "./utils.js";
+import { layerProperties, type ResolvedLayer } from "./utils/schema.js";
 
 export const fn = z.union([
   z.object({ stops: z.array(z.tuple([z.number(), z.number()])) }),
@@ -117,6 +117,9 @@ export const circleLayer = z.extend(layerBase, {
     "circle-color": z.string(),
     "circle-radius": z.number(),
   }),
+  layout: layerProperties({
+    visibility: z.enum(["visible", "none"]),
+  }),
 });
 
 export const fillLayer = z.extend(layerBase, {
@@ -141,7 +144,7 @@ export const fillLayer = z.extend(layerBase, {
   }),
 });
 
-const lineLayer = z.extend(layerBase, {
+export const lineLayer = z.extend(layerBase, {
   type: z.literal("line"),
   source: z.string(),
   "source-layer": z.optional(z.string()),
@@ -225,9 +228,6 @@ export const symbolLayer = z.extend(layerBase, {
   layout: layerProperties({}),
 });
 
-export type ResolvedBackgroundLayer = ResolvedLayer<
-  z.output<typeof backgroundLayer>
->;
 export type ResolvedCircleLayer = ResolvedLayer<z.output<typeof circleLayer>>;
 export type ResolvedFillLayer = ResolvedLayer<z.output<typeof fillLayer>>;
 export type ResolvedLineLayer = ResolvedLayer<z.output<typeof lineLayer>>;

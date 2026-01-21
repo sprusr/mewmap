@@ -1,17 +1,8 @@
-import { TILE_EXTENT } from "./constants.js";
-import type { PreparedTile, Renderer, Source, Style } from "./types.js";
-import { requestIdleCallback } from "./utils.js";
-
-type TileCoordinates = {
-  x: number;
-  y: number;
-  z: number;
-};
-
-type RenderedTile = {
-  coordinates: TileCoordinates;
-  layerElements: Record<string, SVGElement>;
-};
+import { TILE_EXTENT } from "../constants.js";
+import type { Renderer } from "../types.js";
+import { requestIdleCallback } from "../utils.js";
+import { render as renderTile } from "./tile.js";
+import type { RenderedTile, TileCoordinates } from "./types.js";
 
 export const renderer = (): Renderer => {
   const tileCache = new Map<
@@ -137,7 +128,7 @@ export const renderer = (): Renderer => {
         const { added, removed } = updateWantedTiles(wantedTiles);
 
         for (const { x, y, z } of added) {
-          const tile = await renderTileCached({
+          const tile = await renderTile({
             tile: { x, y, z },
             cache: tileCache,
             source,
@@ -275,99 +266,4 @@ const calculateTransformForTile = ({
     y: (tile.y * scale - Math.round(cameraY * scale)) * TILE_EXTENT,
     scale,
   };
-};
-
-const renderTileCached = async ({
-  tile: { x, y, z },
-  cache,
-  source,
-  style,
-}: {
-  tile: { x: number; y: number; z: number };
-  source: Source;
-  style: Style;
-  cache: Map<string, RenderedTile | null>;
-}): Promise<RenderedTile | null> => {
-  const cached = cache.get(`${x}-${y}-${z}`);
-  if (cached !== undefined) {
-    return cached;
-  }
-  const preparedTile = await style.prepare({ source, tile: { x, y, z } });
-  const renderedTile = {
-    coordinates: { x, y, z },
-    layerElements: renderTile(preparedTile),
-  };
-  cache.set(`${x}-${y}-${z}`, renderedTile);
-  return renderedTile;
-};
-
-const renderTile = (tile: PreparedTile): Record<string, SVGElement> => {
-  const layerElements: Record<string, SVGElement> = {};
-
-  for (const layer of Object.values(tile.layers)) {
-    if (layer.type === "raster") {
-      const image = document.createElementNS(
-        "http://www.w3.org/2000/svg",
-        "image",
-      );
-      image.setAttribute("x", "-1");
-      image.setAttribute("y", "-1");
-      image.setAttribute("width", (TILE_EXTENT + 2).toString());
-      image.setAttribute("height", (TILE_EXTENT + 2).toString());
-      image.setAttribute("href", layer.url);
-      layerElements[layer.name] = image;
-      continue;
-    }
-
-    const element = document.createElementNS("http://www.w3.org/2000/svg", "g");
-
-    for (const feature of layer.features) {
-      const path = document.createElementNS(
-        "http://www.w3.org/2000/svg",
-        "path",
-      );
-
-      path.setAttribute("data-layername", layer.name);
-
-      const d = feature.geometry.commands
-        .map((command) => {
-          switch (command.type) {
-            case "move_to":
-              return `m${command.x} ${command.y}`;
-            case "line_to":
-              return command.points
-                .map((point) => `l${point.x} ${point.y}`)
-                .join("");
-            case "close_path":
-              return "z";
-            case "reset":
-              return "M0 0";
-            default:
-              throw new Error("Unknown command type");
-          }
-        })
-        .join("");
-      path.setAttribute("d", d);
-      path.setAttribute("fill", feature.static.fill ?? "none");
-      path.setAttribute("stroke", feature.static.stroke ?? "none");
-      path.setAttribute(
-        "stroke-width",
-        feature.static.strokeWidth?.toString() ?? "1",
-      );
-      if (feature.static.opacity) {
-        path.setAttribute("opacity", feature.static.opacity?.toString() ?? "1");
-      }
-      if (feature.static.fillTranslate) {
-        path.setAttribute(
-          "transform",
-          `translate(${feature.static.fillTranslate.x} ${feature.static.fillTranslate.y})`,
-        );
-      }
-      element.appendChild(path);
-    }
-
-    layerElements[layer.name] = element;
-  }
-
-  return layerElements;
 };

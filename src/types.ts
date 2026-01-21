@@ -1,6 +1,13 @@
 import type * as z from "zod/mini";
 import type { Tile as VectorTile } from "./gen/vector_tile_pb.js";
-import type { style as styleSchema } from "./style/schema.js";
+import type {
+  ResolvedCircleLayer,
+  ResolvedFillLayer,
+  ResolvedLineLayer,
+  ResolvedRasterLayer,
+  ResolvedSymbolLayer,
+  style as styleSchema,
+} from "./style/schema.js";
 
 export type CameraOptions = {
   longitude?: number;
@@ -92,37 +99,47 @@ export type PreparedFeatureGeometry = {
   commands: Array<PreparedFeatureGeometryCommand>;
 };
 
-// TODO: replace with same shape from style layer schema, but resolved
-export type PreparedFeatureStyle = {
-  fill: string | undefined;
-  fillTranslate: { x: number; y: number } | undefined;
-  stroke: string | undefined;
-  strokeWidth: number | undefined;
-  opacity: number | undefined;
-};
-
-export type PreparedFeature = {
+export type PreparedFeature<T extends { paint?: unknown; layout?: unknown }> = {
   geometry: PreparedFeatureGeometry;
-  /** Style properties which do not change based on state. */
-  static: Partial<PreparedFeatureStyle>;
-  /** Returns style properties which change based on map and feature state. */
-  dynamic?: (params: {
-    zoom: number;
-    /** Feature state */
-    state: Record<string, unknown>;
-  }) => Partial<PreparedFeatureStyle>;
+  paint?: T["paint"];
+  layout?: T["layout"];
 };
 
 export type PreparedLayer =
   | {
-      type: "vector";
+      type: "circle";
       name: string;
-      features: Array<PreparedFeature>;
+      features: Array<PreparedFeature<ResolvedCircleLayer>>;
+      paint?: ResolvedCircleLayer["paint"];
+      layout?: ResolvedCircleLayer["layout"];
+    }
+  | {
+      type: "fill";
+      name: string;
+      features: Array<PreparedFeature<ResolvedFillLayer>>;
+      paint?: ResolvedFillLayer["paint"];
+      layout?: ResolvedFillLayer["layout"];
+    }
+  | {
+      type: "line";
+      name: string;
+      features: Array<PreparedFeature<ResolvedLineLayer>>;
+      paint?: ResolvedLineLayer["paint"];
+      layout?: ResolvedLineLayer["layout"];
     }
   | {
       type: "raster";
       name: string;
       url: string;
+      paint?: ResolvedRasterLayer["paint"];
+      layout?: ResolvedRasterLayer["layout"];
+    }
+  | {
+      type: "symbol";
+      name: string;
+      features: Array<PreparedFeature<ResolvedSymbolLayer>>;
+      paint?: ResolvedSymbolLayer["paint"];
+      layout?: ResolvedSymbolLayer["layout"];
     };
 
 export type PreparedTile = {
