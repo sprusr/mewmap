@@ -4,7 +4,7 @@ export const dummy = (): Style => {
   return {
     background: null,
     layers: [],
-    prepare() {
+    async prepare() {
       return { layers: {} };
     },
   };

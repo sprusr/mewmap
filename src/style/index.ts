@@ -8,10 +8,7 @@ import type * as schema from "./schema.js";
 
 export const style = (spec: z.input<typeof schema.style>): Style => {
   return {
-    background:
-      spec.layers.find((layer) => layer.type === "background")?.paint?.[
-        "background-color"
-      ] ?? null,
+    background: getBackground(spec),
     layers: spec.layers.map((layer) => ({ name: layer.id })),
     async prepare({ source, tile }) {
       const sourceTiles = new Map<string, Tile | null>();
@@ -111,8 +108,20 @@ export const style = (spec: z.input<typeof schema.style>): Style => {
   };
 };
 
+const getBackground = (spec: z.input<typeof schema.style>): string | null => {
+  const background = spec.layers.find((layer) => layer.type === "background")
+    ?.paint?.["background-color"];
+  if (typeof background === "string") {
+    return background;
+  }
+  return null;
+};
+
 const getFill = (layer: z.input<typeof schema.layer>): string | undefined => {
-  if (layer.type !== "fill" || layer.paint?.["fill-color"] === undefined) {
+  if (
+    layer.type !== "fill" ||
+    typeof layer.paint?.["fill-color"] !== "string"
+  ) {
     return undefined;
   }
   return layer.paint["fill-color"];
@@ -121,7 +130,14 @@ const getFill = (layer: z.input<typeof schema.layer>): string | undefined => {
 const getFillTranslate = (
   layer: z.input<typeof schema.layer>,
 ): { x: number; y: number } | undefined => {
-  if (layer.type !== "fill" || layer.paint?.["fill-translate"] === undefined) {
+  if (
+    layer.type !== "fill" ||
+    layer.paint?.["fill-translate"] === undefined ||
+    !Array.isArray(layer.paint["fill-translate"]) ||
+    layer.paint["fill-translate"].length !== 2 ||
+    typeof layer.paint["fill-translate"][0] !== "number" ||
+    typeof layer.paint["fill-translate"][1] !== "number"
+  ) {
     return undefined;
   }
   const [x, y] = layer.paint["fill-translate"];
