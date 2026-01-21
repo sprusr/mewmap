@@ -1,5 +1,5 @@
 import type { PreparedLayer } from "../../types.js";
-import { getResolvedValue, getSvgPathD } from "./common.js";
+import { getResolvedValue, getSvgPathD } from "./utils.js";
 
 export const render = (layer: Extract<PreparedLayer, { type: "fill" }>) => {
   const element = document.createElementNS("http://www.w3.org/2000/svg", "g");
@@ -14,15 +14,21 @@ export const render = (layer: Extract<PreparedLayer, { type: "fill" }>) => {
 
     path.setAttribute(
       "fill",
-      getResolvedValue(feature.paint?.["fill-color"]) ?? "black",
+      getResolvedValue(
+        feature.paint?.["fill-color"] ?? layer.paint?.["fill-color"],
+      ) ?? "black",
     );
 
-    const opacity = getResolvedValue(feature.paint?.["fill-opacity"]);
+    const opacity = getResolvedValue(
+      feature.paint?.["fill-opacity"] ?? layer.paint?.["fill-opacity"],
+    );
     if (opacity !== undefined) {
       path.setAttribute("opacity", opacity.toString() ?? "1");
     }
 
-    // const fillTranslate = getResolvedValue(feature.paint?.["fill-translate"]);
+    // const fillTranslate = getResolvedValue(
+    //   feature.paint?.["fill-translate"] ?? layer.paint?.["fill-translate"],
+    // );
     // if (fillTranslate) {
     //   path.setAttribute(
     //     "transform",
