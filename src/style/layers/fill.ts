@@ -2,7 +2,7 @@ import type * as z from "zod/mini";
 import { TILE_EXTENT } from "../../constants.js";
 import type { PreparedLayer, Tile } from "../../types.js";
 import type * as schema from "../schema.js";
-import { extractGeometry } from "./common.js";
+import { extractGeometry } from "./utils.js";
 
 export const prepare = (
   tile: Extract<Tile, { type: "vector" }>,

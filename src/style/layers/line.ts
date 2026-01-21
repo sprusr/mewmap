@@ -1,8 +1,9 @@
 import type * as z from "zod/mini";
 import { TILE_EXTENT } from "../../constants.js";
 import type { PreparedLayer, Tile } from "../../types.js";
+import { stops } from "../expression/utils.js";
 import type * as schema from "../schema.js";
-import { extractGeometry } from "./common.js";
+import { extractGeometry } from "./utils.js";
 
 export const prepare = (
   tile: Extract<Tile, { type: "vector" }>,
@@ -27,7 +28,7 @@ export const prepare = (
     features: [{ geometry }],
     paint: {
       "line-color": color(layer),
-      "line-width": undefined,
+      "line-width": width(layer, 16), // TODO: provide actual zoom
       "line-opacity": undefined,
     },
     layout: {},
@@ -41,4 +42,21 @@ const color = (
     return undefined;
   }
   return { type: "constant", value: layer.paint["line-color"] };
+};
+
+const width = (
+  layer: z.input<typeof schema.lineLayer>,
+  z: number,
+): { type: "constant"; value: number } | undefined => {
+  if (layer.paint?.["line-width"] === undefined) return undefined;
+  if (typeof layer.paint?.["line-width"] === "number") {
+    return { type: "constant", value: layer.paint["line-width"] };
+  }
+  if ("stops" in layer.paint["line-width"]) {
+    return {
+      type: "constant",
+      value: stops(z, layer.paint["line-width"].stops),
+    };
+  }
+  return undefined;
 };
