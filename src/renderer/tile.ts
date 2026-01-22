@@ -1,5 +1,10 @@
 import { TILE_EXTENT } from "../constants.js";
-import type { PreparedTile, Source, Style } from "../types.js";
+import type {
+  PreparedFeatureContext,
+  PreparedTile,
+  Source,
+  Style,
+} from "../types.js";
 import * as fill from "./layers/fill.js";
 import * as line from "./layers/line.js";
 import type { RenderedTile } from "./types.js";
@@ -22,13 +27,17 @@ export const render = async ({
   const preparedTile = await style.prepare({ source, tile: { x, y, z } });
   const renderedTile = {
     coordinates: { x, y, z },
-    layerElements: renderTile(preparedTile),
+    // TODO: temporarily providing static tile z level
+    layerElements: renderTile(preparedTile, { zoom: z }),
   };
   cache.set(`${x}-${y}-${z}`, renderedTile);
   return renderedTile;
 };
 
-const renderTile = (tile: PreparedTile): Record<string, SVGElement> => {
+const renderTile = (
+  tile: PreparedTile,
+  context: PreparedFeatureContext,
+): Record<string, SVGElement> => {
   const layerElements: Record<string, SVGElement> = {};
 
   for (const layer of Object.values(tile.layers)) {
@@ -44,9 +53,10 @@ const renderTile = (tile: PreparedTile): Record<string, SVGElement> => {
       image.setAttribute("href", layer.url);
       layerElements[layer.name] = image;
     } else if (layer.type === "fill") {
-      layerElements[layer.name] = fill.render(layer);
+      // TODO: return function which takes context and updates element style attributes
+      layerElements[layer.name] = fill.render(layer, context);
     } else if (layer.type === "line") {
-      layerElements[layer.name] = line.render(layer);
+      layerElements[layer.name] = line.render(layer, context);
     }
   }
 

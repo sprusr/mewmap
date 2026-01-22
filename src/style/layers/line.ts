@@ -1,6 +1,6 @@
 import type * as z from "zod/mini";
 import { TILE_EXTENT } from "../../constants.js";
-import type { PreparedLayer, Tile } from "../../types.js";
+import type { PreparedFeatureValue, PreparedLayer, Tile } from "../../types.js";
 import { stops } from "../expression/utils.js";
 import type * as schema from "../schema.js";
 import { extractGeometry } from "./utils.js";
@@ -28,7 +28,7 @@ export const prepare = (
     features: [{ geometry }],
     paint: {
       "line-color": color(layer),
-      "line-width": width(layer, 16), // TODO: provide actual zoom
+      "line-width": width(layer),
       "line-opacity": undefined,
     },
     layout: {},
@@ -37,7 +37,7 @@ export const prepare = (
 
 const color = (
   layer: z.input<typeof schema.lineLayer>,
-): { type: "constant"; value: string } | undefined => {
+): PreparedFeatureValue<string> => {
   if (typeof layer.paint?.["line-color"] !== "string") {
     return undefined;
   }
@@ -46,16 +46,16 @@ const color = (
 
 const width = (
   layer: z.input<typeof schema.lineLayer>,
-  z: number,
-): { type: "constant"; value: number } | undefined => {
+): PreparedFeatureValue<number> => {
   if (layer.paint?.["line-width"] === undefined) return undefined;
   if (typeof layer.paint?.["line-width"] === "number") {
     return { type: "constant", value: layer.paint["line-width"] };
   }
   if ("stops" in layer.paint["line-width"]) {
+    const lineWidthStops = layer.paint["line-width"].stops;
     return {
-      type: "constant",
-      value: stops(z, layer.paint["line-width"].stops),
+      type: "dynamic",
+      value: ({ zoom }) => stops(zoom, lineWidthStops),
     };
   }
   return undefined;
