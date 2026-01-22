@@ -58,6 +58,16 @@
         display: inline-flex;
         gap: 4px;
       }
+      .mapstyle {
+        display: inline;
+        font-size: 10pt;
+        background: white;
+        padding-block-start: 4px;
+        vertical-align: middle;
+      }
+      .mapstyle > label {
+        vertical-align: top;
+      }
     </style>
   </head>
   <body>
@@ -73,6 +83,34 @@
       </form>
       <button type="button" id="zoom-in">Zoom in</button>
       <button type="button" id="zoom-out">Zoom out</button>
+      <div class="mapstyle">
+        <input
+          type="radio"
+          id="mapstyle-normal"
+          name="mapstyle"
+          value="normal"
+          checked
+        />
+        <label for="mapstyle-normal">Normal</label>
+      </div>
+      <div class="mapstyle">
+        <input
+          type="radio"
+          id="mapstyle-simplified"
+          name="mapstyle"
+          value="simplified"
+        />
+        <label for="mapstyle-simplified">Simplified</label>
+      </div>
+      <div class="mapstyle">
+        <input
+          type="radio"
+          id="mapstyle-satellite"
+          name="mapstyle"
+          value="satellite"
+        />
+        <label for="mapstyle-satellite">Satellite</label>
+      </div>
     </div>
     <script type="module">
       import { mewmap } from "./src/index.ts";
@@ -95,6 +133,53 @@
       document.getElementById("zoom-out").addEventListener("click", () => {
         map.move({ zoom: map.camera.zoom - 0.5 });
       });
+
+      // add style switcher
+      document
+        .getElementById("mapstyle-normal")
+        .addEventListener("click", async () => {
+          await map.setStyle(
+            "https://tiles.versatiles.org/assets/styles/colorful/style.json",
+          );
+        });
+      document
+        .getElementById("mapstyle-simplified")
+        .addEventListener("click", async () => {
+          await map.setStyle(
+            "https://gist.githubusercontent.com/sprusr/ab2adfe297fd8ca18e063db9cbc8c13e/raw/7ff681e9a7e551090d2846fa99b1e8992619089f/style.json",
+          );
+        });
+      document
+        .getElementById("mapstyle-satellite")
+        .addEventListener("click", async () => {
+          const response = await fetch(
+            "https://tiles.versatiles.org/assets/styles/colorful/style.json",
+          );
+          const json = await response.json();
+
+          // add satellite layer, remove vector layers which would look bad with it
+          json.layers.splice(1, 0, {
+            id: "orthophotos",
+            type: "raster",
+            source: "orthophotos",
+          });
+          json.layers = json.layers.filter(
+            (l) =>
+              l.type !== "fill" &&
+              !/^(land|water|site|airport|tunnel)-/.test(l.id),
+          );
+          json.sources["orthophotos"] = {
+            type: "raster",
+            tiles: [
+              "https://versatiles-satellite.b-cdn.net/tiles/orthophotos/{z}/{x}/{y}",
+            ],
+            tileSize: 512,
+            attribution: "© VersaTiles",
+            maxzoom: 17,
+          };
+
+          await map.setStyle(json);
+        });
 
       // setup search
       const input = document.getElementById("query");
