@@ -1,13 +1,15 @@
-import type { PreparedFeatureGeometry } from "../../types.js";
+import type {
+  PreparedFeatureContext,
+  PreparedFeatureGeometry,
+  PreparedFeatureValue,
+} from "../../types.js";
 
 export const getResolvedValue = <T>(
-  value:
-    | { type: "constant"; value: T }
-    | { type: "dynamic"; value: () => T }
-    | undefined,
+  value: PreparedFeatureValue<T>,
+  context: PreparedFeatureContext,
 ): T | undefined => {
   if (value?.type === "constant") return value.value;
-  if (value?.type === "dynamic") return value.value();
+  if (value?.type === "dynamic") return value.value(context);
   return undefined;
 };
 

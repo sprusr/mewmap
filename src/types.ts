@@ -99,6 +99,21 @@ export type PreparedFeatureGeometry = {
   commands: Array<PreparedFeatureGeometryCommand>;
 };
 
+export type PreparedFeatureContext = {
+  zoom: number;
+};
+
+export type PreparedFeatureValue<T> =
+  | {
+      type: "constant";
+      value: T;
+    }
+  | {
+      type: "dynamic";
+      value: (context: PreparedFeatureContext) => T;
+    }
+  | undefined;
+
 export type PreparedFeature<T extends { paint?: unknown; layout?: unknown }> = {
   geometry: PreparedFeatureGeometry;
   paint?: T["paint"];

@@ -1,16 +1,6 @@
 import * as z from "zod/mini";
+import type { PreparedFeatureValue } from "../../types.js";
 import { expression, fn } from "../schema.js";
-
-type ResolvedType<T> =
-  | {
-      type: "constant";
-      value: T;
-    }
-  | {
-      type: "dynamic";
-      value: () => T;
-    }
-  | undefined;
 
 export type ResolvedLayer<
   T extends {
@@ -20,7 +10,7 @@ export type ResolvedLayer<
 > = {
   [K in keyof T]: K extends "paint" | "layout"
     ? {
-        [J in keyof Exclude<T[K], undefined>]: ResolvedType<
+        [J in keyof Exclude<T[K], undefined>]: PreparedFeatureValue<
           Exclude<
             Exclude<T[K], undefined>[J],
             z.output<typeof expression> | z.output<typeof fn> | undefined

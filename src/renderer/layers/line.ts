@@ -1,7 +1,10 @@
-import type { PreparedLayer } from "../../types.js";
+import type { PreparedFeatureContext, PreparedLayer } from "../../types.js";
 import { getResolvedValue, getSvgPathD } from "./utils.js";
 
-export const render = (layer: Extract<PreparedLayer, { type: "line" }>) => {
+export const render = (
+  layer: Extract<PreparedLayer, { type: "line" }>,
+  context: PreparedFeatureContext,
+) => {
   const element = document.createElementNS("http://www.w3.org/2000/svg", "g");
 
   for (const feature of layer.features) {
@@ -16,6 +19,7 @@ export const render = (layer: Extract<PreparedLayer, { type: "line" }>) => {
       "stroke",
       getResolvedValue(
         feature.paint?.["line-color"] ?? layer.paint?.["line-color"],
+        context,
       ) ?? "black",
     );
 
@@ -23,11 +27,13 @@ export const render = (layer: Extract<PreparedLayer, { type: "line" }>) => {
       "stroke-width",
       getResolvedValue(
         feature.paint?.["line-width"] ?? layer.paint?.["line-width"],
+        context,
       )?.toString() ?? "1",
     );
 
     const opacity = getResolvedValue(
       feature.paint?.["line-opacity"] ?? layer.paint?.["line-opacity"],
+      { zoom: 1 },
     );
     if (opacity !== undefined) {
       path.setAttribute("opacity", opacity.toString() ?? "1");
