@@ -45,17 +45,17 @@ export const renderer = (): Renderer => {
   let transformGroupElement: SVGElement | null = null;
 
   return {
-    init({ camera, source, style, svg, ui }) {
+    init(map) {
       animating = true;
 
-      svg.style.background = style.background ?? "none";
+      map.svg.style.background = map.style.background ?? "none";
 
       transformGroupElement = document.createElementNS(
         "http://www.w3.org/2000/svg",
         "g",
       );
 
-      for (const layer of style.layers) {
+      for (const layer of map.style.layers) {
         const layerGroupElement = document.createElementNS(
           "http://www.w3.org/2000/svg",
           "g",
@@ -64,7 +64,7 @@ export const renderer = (): Renderer => {
         transformGroupElement.appendChild(layerGroupElement);
       }
 
-      svg.appendChild(transformGroupElement);
+      map.svg.appendChild(transformGroupElement);
 
       // for tracking when to recalculate tile transforms
       let previousRoundedX: number | null = null;
@@ -74,26 +74,28 @@ export const renderer = (): Renderer => {
       const render = async () => {
         if (!animating) return;
 
-        const cameraTransform = calculateTransformForCamera({ camera });
+        const cameraTransform = calculateTransformForCamera({
+          camera: map.camera,
+        });
         transformGroupElement?.setAttribute(
           "transform",
           `translate(${cameraTransform.x}, ${cameraTransform.y}) scale(${cameraTransform.scale})`,
         );
 
-        const roundedX = Math.round(camera.x);
-        const roundedY = Math.round(camera.y);
+        const roundedX = Math.round(map.camera.x);
+        const roundedY = Math.round(map.camera.y);
 
         if (
           previousRoundedX !== roundedX ||
           previousRoundedY !== roundedY ||
-          previousZ !== camera.z
+          previousZ !== map.camera.z
         ) {
           for (const {
             coordinates: { x, y, z },
             layerElements,
           } of visibleTiles) {
             const tileTransform = calculateTransformForTile({
-              camera,
+              camera: map.camera,
               tile: { x, y, z },
             });
             for (const element of Object.values(layerElements)) {
@@ -106,7 +108,7 @@ export const renderer = (): Renderer => {
 
           previousRoundedX = roundedX;
           previousRoundedY = roundedY;
-          previousZ = camera.z;
+          previousZ = map.camera.z;
         }
 
         requestAnimationFrame(render);
@@ -117,12 +119,15 @@ export const renderer = (): Renderer => {
         if (!animating) return;
 
         // proper idle scheduling not possible, wait until user stops interacting
-        if (globalThis.requestIdleCallback === undefined && ui.interacting) {
+        if (
+          globalThis.requestIdleCallback === undefined &&
+          map.ui.interacting
+        ) {
           requestIdleCallback(idle);
           return;
         }
 
-        const wantedTiles = calculateWantedTiles(camera, {
+        const wantedTiles = calculateWantedTiles(map.camera, {
           expanded: true,
         });
         const { added, removed } = updateWantedTiles(wantedTiles);
@@ -131,8 +136,8 @@ export const renderer = (): Renderer => {
           const tile = await renderTile({
             tile: { x, y, z },
             cache: tileCache,
-            source,
-            style,
+            source: map.source,
+            style: map.style,
           });
 
           if (!tile) {
@@ -140,7 +145,7 @@ export const renderer = (): Renderer => {
           }
 
           const transform = calculateTransformForTile({
-            camera,
+            camera: map.camera,
             tile: { x, y, z },
           });
 

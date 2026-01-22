@@ -197,4 +197,5 @@ export type MewMap = {
     latitude?: number;
     zoom?: number;
   }): void;
+  setStyle(style: string | z.input<typeof styleSchema>): Promise<void>;
 };

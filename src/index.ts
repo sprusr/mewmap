@@ -28,6 +28,13 @@ export const mewmap = (options: MewMapOptions): MewMap => {
     move(params) {
       this.camera.move(params);
     },
+    async setStyle(spec) {
+      const resolved = await getStyleSpec(spec);
+      map.style = style(resolved);
+      map.source = sourceFromStyleSpec(resolved);
+      map.renderer.destroy();
+      map.renderer.init(map);
+    },
     source: dummySource(),
     style: dummyStyle(),
     svg: options.svg as SVGSVGElement,
@@ -60,27 +67,6 @@ const getStyleSpec = async (
     const response = await fetch(styleOption ?? DEFAULT_STYLE_URL);
     const json = await response.json();
     const parsed = styleSchema.parse(json);
-
-    // add satellite layer, remove vector layers which would look bad with it
-    parsed.layers.splice(1, 0, {
-      id: "orthophotos",
-      type: "raster",
-      source: "orthophotos",
-    });
-    parsed.layers = parsed.layers.filter(
-      (l) =>
-        l.type !== "fill" && !/^(land|water|site|airport|tunnel)-/.test(l.id),
-    );
-    parsed.sources["orthophotos"] = {
-      type: "raster",
-      tiles: [
-        "https://versatiles-satellite.b-cdn.net/tiles/orthophotos/{z}/{x}/{y}",
-      ],
-      tileSize: 512,
-      attribution: "© VersaTiles",
-      maxzoom: 17,
-    };
-
     return parsed;
   }
   return styleSchema.parse(styleOption);
