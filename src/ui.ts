@@ -84,17 +84,17 @@ export const ui = (): UI => {
 
         // drag to pan
         if (event.buttons === 1) {
-          const { x: previousX, y: previousY } = camera.screenToTile({
+          const previous = camera.screenToTile({
             x: event.offsetX - event.movementX,
             y: event.offsetY - event.movementY,
           });
-          const { x, y } = camera.screenToTile({
+          const current = camera.screenToTile({
             x: event.offsetX,
             y: event.offsetY,
           });
           const { longitude, latitude } = camera.tileToCoordinates({
-            x: camera.x + previousX - x,
-            y: camera.y + previousY - y,
+            x: camera.x + previous.x - current.x,
+            y: camera.y + previous.y - current.y,
           });
           return camera.move({ longitude, latitude });
         }
