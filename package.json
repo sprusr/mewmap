@@ -1,6 +1,6 @@
 {
   "name": "mewmap",
-  "version": "0.1.0-alpha.4",
+  "version": "0.1.0-alpha.5",
   "description": "Interactive vector maps powered by SVG",
   "type": "module",
   "main": "./dist/index.js",
