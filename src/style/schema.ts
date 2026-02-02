@@ -5,9 +5,9 @@ export const fn = z.union([
   z.object({ stops: z.array(z.tuple([z.number(), z.number()])) }),
 ]);
 
-export const filter = z.unknown();
+export const filter = z.unknown().brand<"Filter">();
 
-export const expression = z.array(z.unknown());
+export const expression = z.array(z.unknown()).brand<"Expression">();
 
 export const vectorSource = z
   .object({

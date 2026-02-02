@@ -4,7 +4,7 @@ import * as fill from "./layers/fill.js";
 import * as line from "./layers/line.js";
 import type * as schema from "./schema.js";
 
-export const style = (spec: z.input<typeof schema.style>): Style => {
+export const style = (spec: z.output<typeof schema.style>): Style => {
   return {
     background: getBackground(spec),
     layers: spec.layers.map((layer) => ({ name: layer.id })),
@@ -55,7 +55,7 @@ export const style = (spec: z.input<typeof schema.style>): Style => {
   };
 };
 
-const getBackground = (spec: z.input<typeof schema.style>): string | null => {
+const getBackground = (spec: z.output<typeof schema.style>): string | null => {
   const background = spec.layers.find((layer) => layer.type === "background")
     ?.paint?.["background-color"];
   if (typeof background === "string") {

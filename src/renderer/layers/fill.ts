@@ -26,11 +26,11 @@ export const render = (
       1,
     );
 
-    // resolver.resolve(
-    //   feature.paint?.["fill-translate"] ?? layer.paint?.["fill-translate"],
-    //   (value) =>
-    //     path.setAttribute("transform", `translate(${value.x} ${value.y})`),
-    // );
+    resolver.resolve(
+      feature.paint?.["fill-translate"] ?? layer.paint?.["fill-translate"],
+      (value) =>
+        path.setAttribute("transform", `translate(${value[0]} ${value[1]})`),
+    );
 
     // TODO: move to parent styles
     path.setAttribute("stroke", "none");
