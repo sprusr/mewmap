@@ -27,7 +27,7 @@ export const prepare = (
     features: [{ geometry }],
     paint: {
       "fill-color": color(layer),
-      "fill-translate": undefined,
+      "fill-translate": translate(layer),
       "fill-opacity": undefined,
     },
     layout: {},
@@ -35,10 +35,26 @@ export const prepare = (
 };
 
 const color = (
-  layer: z.input<typeof schema.fillLayer>,
+  layer: z.output<typeof schema.fillLayer>,
 ): PreparedFeatureValue<string> => {
   if (typeof layer.paint?.["fill-color"] !== "string") {
     return undefined;
   }
   return { type: "constant", value: layer.paint["fill-color"] };
+};
+
+const translate = (
+  layer: z.output<typeof schema.fillLayer>,
+): PreparedFeatureValue<[number, number]> => {
+  if (!Array.isArray(layer.paint?.["fill-translate"])) {
+    return undefined;
+  }
+  const [x, y] = layer.paint["fill-translate"];
+  if (typeof x !== "number" || typeof y !== "number") {
+    return undefined;
+  }
+  return {
+    type: "constant",
+    value: [x, y],
+  };
 };

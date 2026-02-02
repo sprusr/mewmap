@@ -36,7 +36,7 @@ export const prepare = (
 };
 
 const color = (
-  layer: z.input<typeof schema.lineLayer>,
+  layer: z.output<typeof schema.lineLayer>,
 ): PreparedFeatureValue<string> => {
   if (typeof layer.paint?.["line-color"] !== "string") {
     return undefined;
@@ -45,7 +45,7 @@ const color = (
 };
 
 const width = (
-  layer: z.input<typeof schema.lineLayer>,
+  layer: z.output<typeof schema.lineLayer>,
 ): PreparedFeatureValue<number> => {
   if (layer.paint?.["line-width"] === undefined) return undefined;
   if (typeof layer.paint?.["line-width"] === "number") {
