@@ -1,11 +1,17 @@
+import type { PreparedFeatureContext } from "../types.js";
+
 export type TileCoordinates = {
   x: number;
   y: number;
   z: number;
 };
 
+export type RenderedLayer = {
+  element: SVGElement;
+  repaint: ((context: PreparedFeatureContext) => void) | null;
+};
+
 export type RenderedTile = {
   coordinates: TileCoordinates;
-  layerElements: Record<string, SVGElement>;
-  // TODO: add update function which takes context and updates elements style attributes
+  layers: Record<string, RenderedLayer>;
 };

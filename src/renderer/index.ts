@@ -1,7 +1,7 @@
 import { TILE_EXTENT } from "../constants.js";
 import type { Renderer } from "../types.js";
 import { requestIdleCallback } from "../utils.js";
-import { render as renderTile } from "./tile.js";
+import { renderTile } from "./tile.js";
 import type { RenderedTile, TileCoordinates } from "./types.js";
 
 export const renderer = (): Renderer => {
@@ -82,6 +82,12 @@ export const renderer = (): Renderer => {
           `translate(${cameraTransform.x}, ${cameraTransform.y}) scale(${cameraTransform.scale})`,
         );
 
+        for (const { layers } of visibleTiles) {
+          for (const layer of Object.values(layers)) {
+            layer.repaint?.({ zoom: map.camera.zoom });
+          }
+        }
+
         const roundedX = Math.round(map.camera.x);
         const roundedY = Math.round(map.camera.y);
 
@@ -92,14 +98,14 @@ export const renderer = (): Renderer => {
         ) {
           for (const {
             coordinates: { x, y, z },
-            layerElements,
+            layers,
           } of visibleTiles) {
             const tileTransform = calculateTransformForTile({
               camera: map.camera,
               tile: { x, y, z },
             });
-            for (const element of Object.values(layerElements)) {
-              element.setAttribute(
+            for (const layer of Object.values(layers)) {
+              layer.element.setAttribute(
                 "transform",
                 `translate(${tileTransform.x}, ${tileTransform.y}) scale(${tileTransform.scale})`,
               );
@@ -149,20 +155,18 @@ export const renderer = (): Renderer => {
             tile: { x, y, z },
           });
 
-          for (const [layerName, layerElement] of Object.entries(
-            tile.layerElements,
-          )) {
-            layerElement.setAttribute(
+          for (const [layerName, layer] of Object.entries(tile.layers)) {
+            layer.element.setAttribute(
               "transform",
               `translate(${transform.x}, ${transform.y}) scale(${transform.scale})`,
             );
-            layerElement.setAttribute(
+            layer.element.setAttribute(
               "id",
               `layer-${layerName}-tile-${x}-${y}-${z}`,
             );
             document
               .getElementById(`layer-${layerName}`)
-              ?.appendChild(layerElement);
+              ?.appendChild(layer.element);
           }
 
           visibleTiles.add(tile);
@@ -171,8 +175,8 @@ export const renderer = (): Renderer => {
         for (const { x, y, z } of removed) {
           const tile = tileCache.get(`${x}-${y}-${z}`);
           if (tile) {
-            for (const element of Object.values(tile.layerElements)) {
-              element.remove();
+            for (const layer of Object.values(tile.layers)) {
+              layer.element.remove();
             }
             visibleTiles.delete(tile);
           }

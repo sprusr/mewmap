@@ -1,43 +1,36 @@
-import type { PreparedFeatureContext, PreparedLayer } from "../../types.js";
-import { getResolvedValue, getSvgPathD } from "./utils.js";
+import type { PreparedLayer } from "../../types.js";
+import type { RenderedLayer } from "../types.js";
+import { featureValueResolver, getSvgPathD } from "./utils.js";
 
 export const render = (
   layer: Extract<PreparedLayer, { type: "line" }>,
-  context: PreparedFeatureContext,
-) => {
+): RenderedLayer => {
   const element = document.createElementNS("http://www.w3.org/2000/svg", "g");
+  const resolver = featureValueResolver();
 
   for (const feature of layer.features) {
     const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
 
     path.setAttribute("data-layername", layer.name);
+    path.setAttribute("d", getSvgPathD(feature.geometry));
 
-    const d = getSvgPathD(feature.geometry);
-    path.setAttribute("d", d);
-
-    path.setAttribute(
-      "stroke",
-      getResolvedValue(
-        feature.paint?.["line-color"] ?? layer.paint?.["line-color"],
-        context,
-      ) ?? "black",
+    resolver.resolve(
+      feature.paint?.["line-color"] ?? layer.paint?.["line-color"],
+      (value) => path.setAttribute("stroke", value),
+      "black",
     );
 
-    path.setAttribute(
-      "stroke-width",
-      getResolvedValue(
-        feature.paint?.["line-width"] ?? layer.paint?.["line-width"],
-        context,
-      )?.toString() ?? "1",
+    resolver.resolve(
+      feature.paint?.["line-width"] ?? layer.paint?.["line-width"],
+      (value) => path.setAttribute("stroke-width", value.toString()),
+      1,
     );
 
-    const opacity = getResolvedValue(
+    resolver.resolve(
       feature.paint?.["line-opacity"] ?? layer.paint?.["line-opacity"],
-      { zoom: 1 },
+      (value) => path.setAttribute("opacity", value.toString()),
+      1,
     );
-    if (opacity !== undefined) {
-      path.setAttribute("opacity", opacity.toString() ?? "1");
-    }
 
     // TODO: move to parent styles
     path.setAttribute("fill", "none");
@@ -45,5 +38,5 @@ export const render = (
     element.appendChild(path);
   }
 
-  return element;
+  return { element, repaint: resolver.repaint };
 };
