@@ -1,45 +1,36 @@
-import type { PreparedFeatureContext, PreparedLayer } from "../../types.js";
-import { getResolvedValue, getSvgPathD } from "./utils.js";
+import type { PreparedLayer } from "../../types.js";
+import type { RenderedLayer } from "../types.js";
+import { featureValueResolver, getSvgPathD } from "./utils.js";
 
 export const render = (
   layer: Extract<PreparedLayer, { type: "fill" }>,
-  context: PreparedFeatureContext,
-) => {
+): RenderedLayer => {
   const element = document.createElementNS("http://www.w3.org/2000/svg", "g");
+  const resolver = featureValueResolver();
 
   for (const feature of layer.features) {
     const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
 
     path.setAttribute("data-layername", layer.name);
+    path.setAttribute("d", getSvgPathD(feature.geometry));
 
-    const d = getSvgPathD(feature.geometry);
-    path.setAttribute("d", d);
-
-    path.setAttribute(
-      "fill",
-      getResolvedValue(
-        feature.paint?.["fill-color"] ?? layer.paint?.["fill-color"],
-        context,
-      ) ?? "black",
+    resolver.resolve(
+      feature.paint?.["fill-color"] ?? layer.paint?.["fill-color"],
+      (value) => path.setAttribute("fill", value),
+      "black",
     );
 
-    const opacity = getResolvedValue(
+    resolver.resolve(
       feature.paint?.["fill-opacity"] ?? layer.paint?.["fill-opacity"],
-      context,
+      (value) => path.setAttribute("opacity", value.toString()),
+      1,
     );
-    if (opacity !== undefined) {
-      path.setAttribute("opacity", opacity.toString() ?? "1");
-    }
 
-    // const fillTranslate = getResolvedValue(
+    // resolver.resolve(
     //   feature.paint?.["fill-translate"] ?? layer.paint?.["fill-translate"],
+    //   (value) =>
+    //     path.setAttribute("transform", `translate(${value.x} ${value.y})`),
     // );
-    // if (fillTranslate) {
-    //   path.setAttribute(
-    //     "transform",
-    //     `translate(${fillTranslate.x} ${fillTranslate.y})`,
-    //   );
-    // }
 
     // TODO: move to parent styles
     path.setAttribute("stroke", "none");
@@ -47,5 +38,5 @@ export const render = (
     element.appendChild(path);
   }
 
-  return element;
+  return { element, repaint: resolver.repaint };
 };
