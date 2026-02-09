@@ -55,7 +55,129 @@ export const filter: z.ZodMiniType<FilterBase> = z
   ])
   .brand<"filter">();
 
-export const expression = z.array(z.unknown()).brand<"expression">();
+type ExpressionBase =
+  | ["array", ExpressionBase]
+  | ["array", "string" | "number" | "boolean", ExpressionBase]
+  | ["array", "string" | "number" | "boolean", number, ExpressionBase]
+  | ["boolean", ExpressionBase, ...ExpressionBase[]]
+  | [
+      "collator",
+      {
+        "case-sensitive"?: boolean;
+        "diacritic-sensitive"?: boolean;
+        locale?: string;
+      },
+    ]
+  | ["format", ...unknown[]]
+  | ["image", string]
+  | ["image", string, string]
+  | ["image", string, unknown]
+  | ["image", string, unknown, string, unknown]
+  | ["literal", unknown[] | Record<string, unknown>]
+  | ["number", ExpressionBase, ...ExpressionBase[]]
+  | [
+      "number-format",
+      ExpressionBase,
+      {
+        locale?: string;
+        currency?: string;
+        "min-fraction-digits"?: number;
+        "max-fraction-digits"?: number;
+      },
+    ]
+  | ["object", ExpressionBase, ...ExpressionBase[]]
+  | ["string", ExpressionBase, ...ExpressionBase[]]
+  | ["to-boolean", ExpressionBase]
+  | ["to-color", ExpressionBase, ...ExpressionBase[]]
+  | ["to-number", ExpressionBase, ...ExpressionBase[]]
+  | ["to-string", ExpressionBase, ...ExpressionBase[]]
+  | ["typeof", ExpressionBase]
+  | unknown[];
+
+export const expression: z.ZodMiniType<ExpressionBase> = z
+  .union([
+    z.tuple([z.literal("array"), z.lazy(() => expression)]),
+    z.tuple([
+      z.literal("array"),
+      z.union([z.literal("string"), z.literal("number"), z.literal("boolean")]),
+      z.lazy(() => expression),
+    ]),
+    z.tuple([
+      z.literal("array"),
+      z.union([z.literal("string"), z.literal("number"), z.literal("boolean")]),
+      z.number(),
+      z.lazy(() => expression),
+    ]),
+    z.tuple(
+      [z.literal("boolean"), z.lazy(() => expression)],
+      z.lazy(() => expression),
+    ),
+    z.tuple([
+      z.literal("collator"),
+      z.partial(
+        z.object({
+          "case-sensitive": z.boolean(),
+          "diacritic-sensitive": z.boolean(),
+          locale: z.string(),
+        }),
+      ),
+    ]),
+    z.tuple([z.literal("format")], z.unknown()),
+    z.tuple([z.literal("image"), z.string()]),
+    z.tuple([z.literal("image"), z.string(), z.string()]),
+    z.tuple([z.literal("image"), z.string(), z.unknown()]), // TODO: ImageOptions
+    z.tuple([
+      z.literal("image"),
+      z.string(),
+      z.unknown(),
+      z.string(),
+      z.unknown(),
+    ]), // TODO: ImageOptions
+    z.tuple([
+      z.literal("literal"),
+      z.union([z.array(z.unknown()), z.record(z.string(), z.unknown())]),
+    ]),
+    z.tuple(
+      [z.literal("number"), z.lazy(() => expression)],
+      z.lazy(() => expression),
+    ),
+    z.tuple([
+      z.literal("number-format"),
+      z.lazy(() => expression),
+      z.partial(
+        z.object({
+          locale: z.string(),
+          currency: z.string(),
+          "min-fraction-digits": z.number(),
+          "max-fraction-digits": z.number(),
+        }),
+      ),
+    ]),
+    z.tuple(
+      [z.literal("object"), z.lazy(() => expression)],
+      z.lazy(() => expression),
+    ),
+    z.tuple(
+      [z.literal("string"), z.lazy(() => expression)],
+      z.lazy(() => expression),
+    ),
+    z.tuple([z.literal("to-boolean"), z.lazy(() => expression)]),
+    z.tuple(
+      [z.literal("to-color"), z.lazy(() => expression)],
+      z.lazy(() => expression),
+    ),
+    z.tuple(
+      [z.literal("to-number"), z.lazy(() => expression)],
+      z.lazy(() => expression),
+    ),
+    z.tuple(
+      [z.literal("to-string"), z.lazy(() => expression)],
+      z.lazy(() => expression),
+    ),
+    z.tuple([z.literal("typeof"), z.lazy(() => expression)]),
+    z.array(z.unknown()),
+  ])
+  .brand<"expression">();
 
 export const vectorSource = z
   .object({
