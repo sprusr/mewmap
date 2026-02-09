@@ -168,7 +168,7 @@
               l.type !== "fill" &&
               !/^(land|water|site|airport|tunnel)-/.test(l.id),
           );
-          json.sources["orthophotos"] = {
+          json.sources.orthophotos = {
             type: "raster",
             tiles: ["https://tiles.versatiles.org/tiles/satellite/tiles.json"],
             tileSize: 512,
