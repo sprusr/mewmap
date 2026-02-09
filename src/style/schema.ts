@@ -92,6 +92,37 @@ type ExpressionBase =
   | ["to-number", ExpressionBase, ...ExpressionBase[]]
   | ["to-string", ExpressionBase, ...ExpressionBase[]]
   | ["typeof", ExpressionBase]
+  | ["accumulated"]
+  | ["feature-state", string]
+  | ["geometry-type"]
+  | ["id"]
+  | ["line-progress"]
+  | ["properties"]
+  | ["at", number | ExpressionBase, ExpressionBase]
+  | ["at-interpolated", number | ExpressionBase, ExpressionBase]
+  | ["config", string | ExpressionBase]
+  | ["config", string | ExpressionBase, string | ExpressionBase]
+  | ["get", string | ExpressionBase]
+  | ["get", string | ExpressionBase, ExpressionBase]
+  | ["has", string | ExpressionBase]
+  | ["has", string | ExpressionBase, ExpressionBase]
+  | ["in", boolean | string | number | ExpressionBase, string | ExpressionBase]
+  | [
+      "index-of",
+      boolean | string | number | ExpressionBase,
+      string | ExpressionBase,
+    ]
+  | ["length", string | ExpressionBase]
+  | ["measure-light", string]
+  | ["slice", string | ExpressionBase, number | ExpressionBase]
+  | [
+      "slice",
+      string | ExpressionBase,
+      number | ExpressionBase,
+      number | ExpressionBase,
+    ]
+  | ["split", string | ExpressionBase, string | ExpressionBase]
+  | ["worldview"]
   | unknown[];
 
 export const expression: z.ZodMiniType<ExpressionBase> = z
@@ -175,6 +206,81 @@ export const expression: z.ZodMiniType<ExpressionBase> = z
       z.lazy(() => expression),
     ),
     z.tuple([z.literal("typeof"), z.lazy(() => expression)]),
+    z.tuple([z.literal("accumulated")]),
+    z.tuple([z.literal("feature-state"), z.string()]),
+    z.tuple([z.literal("geometry-type")]),
+    z.tuple([z.literal("id")]),
+    z.tuple([z.literal("line-progress")]),
+    z.tuple([z.literal("properties")]),
+    z.tuple([
+      z.literal("at"),
+      z.union([z.number(), z.lazy(() => expression)]),
+      z.lazy(() => expression),
+    ]),
+    z.tuple([
+      z.literal("at-interpolated"),
+      z.union([z.number(), z.lazy(() => expression)]),
+      z.lazy(() => expression),
+    ]),
+    z.tuple([
+      z.literal("config"),
+      z.union([z.string(), z.lazy(() => expression)]),
+    ]),
+    z.tuple([
+      z.literal("config"),
+      z.union([z.string(), z.lazy(() => expression)]),
+      z.union([z.string(), z.lazy(() => expression)]),
+    ]),
+    z.tuple([
+      z.literal("get"),
+      z.union([z.string(), z.lazy(() => expression)]),
+    ]),
+    z.tuple([
+      z.literal("get"),
+      z.union([z.string(), z.lazy(() => expression)]),
+      z.lazy(() => expression),
+    ]),
+    z.tuple([
+      z.literal("has"),
+      z.union([z.string(), z.lazy(() => expression)]),
+    ]),
+    z.tuple([
+      z.literal("has"),
+      z.union([z.string(), z.lazy(() => expression)]),
+      z.lazy(() => expression),
+    ]),
+    z.tuple([
+      z.literal("in"),
+      z.union([z.boolean(), z.string(), z.number(), z.lazy(() => expression)]),
+      z.union([z.string(), z.lazy(() => expression)]),
+    ]),
+    z.tuple([
+      z.literal("index-of"),
+      z.union([z.boolean(), z.string(), z.number(), z.lazy(() => expression)]),
+      z.union([z.string(), z.lazy(() => expression)]),
+    ]),
+    z.tuple([
+      z.literal("length"),
+      z.union([z.string(), z.lazy(() => expression)]),
+    ]),
+    z.tuple([z.literal("measure-light"), z.string()]),
+    z.tuple([
+      z.literal("slice"),
+      z.union([z.string(), z.lazy(() => expression)]),
+      z.union([z.number(), z.lazy(() => expression)]),
+    ]),
+    z.tuple([
+      z.literal("slice"),
+      z.union([z.string(), z.lazy(() => expression)]),
+      z.union([z.number(), z.lazy(() => expression)]),
+      z.union([z.number(), z.lazy(() => expression)]),
+    ]),
+    z.tuple([
+      z.literal("split"),
+      z.union([z.string(), z.lazy(() => expression)]),
+      z.union([z.string(), z.lazy(() => expression)]),
+    ]),
+    z.tuple([z.literal("worldview")]),
     z.array(z.unknown()),
   ])
   .brand<"expression">();
