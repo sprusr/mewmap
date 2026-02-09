@@ -1,13 +1,61 @@
 import * as z from "zod/mini";
 import { layerProperties, type ResolvedLayer } from "./utils/schema.js";
 
-export const fn = z.union([
-  z.object({ stops: z.array(z.tuple([z.number(), z.number()])) }),
-]);
+export const fn = z
+  .union([z.object({ stops: z.array(z.tuple([z.number(), z.number()])) })])
+  .brand<"function">();
 
-export const filter = z.unknown().brand<"Filter">();
+type FilterKey = "$type" | "$id" | string;
 
-export const expression = z.array(z.unknown()).brand<"Expression">();
+const filterKey = z.union([z.literal("$type"), z.literal("$id"), z.string()]);
+
+type FilterValue = string | number | boolean;
+
+const filterValue = z.union([z.string(), z.number(), z.boolean()]);
+
+type FilterBase =
+  | ["has", FilterKey]
+  | ["!has", FilterKey]
+  | ["==", FilterKey, FilterValue]
+  | ["!=", FilterKey, FilterValue]
+  | [">", FilterKey, FilterValue]
+  | [">=", FilterKey, FilterValue]
+  | ["<", FilterKey, FilterValue]
+  | ["<=", FilterKey, FilterValue]
+  | ["in", FilterKey, ...FilterValue[]]
+  | ["!in", FilterKey, ...FilterValue[]]
+  | ["all", ...FilterBase[]]
+  | ["any", ...FilterBase[]]
+  | ["none", ...FilterBase[]];
+
+export const filter: z.ZodMiniType<FilterBase> = z
+  .union([
+    z.tuple([z.literal("has"), filterKey]),
+    z.tuple([z.literal("!has"), filterKey]),
+    z.tuple([z.literal("=="), filterKey, filterValue]),
+    z.tuple([z.literal("!="), filterKey, filterValue]),
+    z.tuple([z.literal(">"), filterKey, filterValue]),
+    z.tuple([z.literal(">="), filterKey, filterValue]),
+    z.tuple([z.literal("<"), filterKey, filterValue]),
+    z.tuple([z.literal("<="), filterKey, filterValue]),
+    z.tuple([z.literal("in"), filterKey], filterValue),
+    z.tuple([z.literal("!in"), filterKey], filterValue),
+    z.tuple(
+      [z.literal("all")],
+      z.lazy(() => filter),
+    ),
+    z.tuple(
+      [z.literal("any")],
+      z.lazy(() => filter),
+    ),
+    z.tuple(
+      [z.literal("none")],
+      z.lazy(() => filter),
+    ),
+  ])
+  .brand<"filter">();
+
+export const expression = z.array(z.unknown()).brand<"expression">();
 
 export const vectorSource = z
   .object({
