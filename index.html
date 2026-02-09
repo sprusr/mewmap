@@ -170,11 +170,12 @@
           );
           json.sources["orthophotos"] = {
             type: "raster",
-            tiles: [
-              "https://versatiles-satellite.b-cdn.net/tiles/orthophotos/{z}/{x}/{y}",
-            ],
+            tiles: ["https://tiles.versatiles.org/tiles/satellite/tiles.json"],
             tileSize: 512,
-            attribution: "© VersaTiles",
+            attribution:
+              "<a href='https://versatiles.org/sources/'>VersaTiles sources</a>",
+            bounds: [-178.187256, -21.401934, 55.846252, 58.061897],
+            minzoom: 0,
             maxzoom: 17,
           };
 
