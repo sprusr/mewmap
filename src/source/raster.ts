@@ -10,13 +10,13 @@ export const raster = ({ name: sourceName }: { name: string }): Source => {
       // attempt to prefetch image so that it's in cache
       try {
         await fetch(
-          `https://versatiles-satellite.b-cdn.net/tiles/orthophotos/${z}/${x}/${y}`,
+          `https://tiles.versatiles.org/tiles/satellite/${z}/${x}/${y}`,
         );
       } catch {}
 
       return {
         type: "raster",
-        url: `https://versatiles-satellite.b-cdn.net/tiles/orthophotos/${z}/${x}/${y}`,
+        url: `https://tiles.versatiles.org/tiles/satellite/${z}/${x}/${y}`,
         x,
         y,
         z,
