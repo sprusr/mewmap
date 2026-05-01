@@ -63,9 +63,9 @@ type ExpressionBase =
   | [
       "collator",
       {
-        "case-sensitive"?: boolean;
-        "diacritic-sensitive"?: boolean;
-        locale?: string;
+        "case-sensitive"?: boolean | undefined;
+        "diacritic-sensitive"?: boolean | undefined;
+        locale?: string | undefined;
       },
     ]
   | ["format", ...unknown[]]
@@ -79,10 +79,10 @@ type ExpressionBase =
       "number-format",
       ExpressionBase,
       {
-        locale?: string;
-        currency?: string;
-        "min-fraction-digits"?: number;
-        "max-fraction-digits"?: number;
+        locale?: string | undefined;
+        currency?: string | undefined;
+        "min-fraction-digits"?: number | undefined;
+        "max-fraction-digits"?: number | undefined;
       },
     ]
   | ["object", ExpressionBase, ...ExpressionBase[]]
@@ -122,8 +122,7 @@ type ExpressionBase =
       number | ExpressionBase,
     ]
   | ["split", string | ExpressionBase, string | ExpressionBase]
-  | ["worldview"]
-  | unknown[];
+  | ["worldview"];
 
 export const expression: z.ZodMiniType<ExpressionBase> = z
   .union([
@@ -281,7 +280,6 @@ export const expression: z.ZodMiniType<ExpressionBase> = z
       z.union([z.string(), z.lazy(() => expression)]),
     ]),
     z.tuple([z.literal("worldview")]),
-    z.array(z.unknown()),
   ])
   .brand<"expression">();
 
