@@ -21,13 +21,13 @@ export const camera = (options: CameraOptions): Camera => {
       return zoom;
     },
     get x() {
-      return x;
+      return z;
     },
     get y() {
       return y;
     },
     get z() {
-      return z;
+      return x;
     },
     get screen() {
       return screen;
